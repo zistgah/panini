@@ -24,7 +24,7 @@ END STAGE
 
 That is the whole thing. No build step, no compiler, no framework.
 
-## QBASIC in shape
+## BASIC in shape
 
 Line-oriented, case-insensitive, `REM` and `'` comments, `LET` `PRINT` `IF/THEN/ELSE`
 `FOR/NEXT` `WHILE/WEND` `DIM` `SUB`. Anyone who wrote BASIC in 1991 can read a cycler without a
