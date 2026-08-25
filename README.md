@@ -1,6 +1,6 @@
 # PANINI
 
-**پाणिनि · پاणिنی — a language for prompt cycles.**
+**a language for prompt writing cyclers.**
 
 A cycler is a **sequence of prompts and the outputs they produce**. PANINI lets you write that
 sequence down, so a cycler stops being code somebody maintains and becomes a text somebody edits.
