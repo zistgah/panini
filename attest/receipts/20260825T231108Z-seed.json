@@ -1,0 +1,7 @@
+{
+  "protocol": "candor/v1",
+  "utc": "20260825T231108Z",
+  "operation": "seed_panini.sh 1.0.0",
+  "repo": "zistgah/panini",
+  "intent": "seed panini 1.0.0"
+}
