@@ -1,0 +1,112 @@
+REM  tilasm.pni — the immersive cycler.  طلسم
+REM  A station is a PLACE, not a moment. There is no timeline here and the
+REM  visitor is not on rails: the work is a graph they walk.
+
+CYCLER TILASM
+  TITLE   "Tilasm"
+  SCRIPT  "طلسم"
+  OUTPUT  IMMERSIVE
+  UNIT    "station"
+  PURPOSE "Build somewhere a person can be: an exhibition, a training environment, a spatial narrative, a virtual laboratory."
+
+  CONTRACT
+    REFUSE    "a piece in which no station leads anywhere"
+    REFUSE    "an exit naming a station that does not exist"
+    REFUSE    "assuming a standing visitor with two hands and hearing"
+    INVARIANT "every station has a comfort note, even when the answer is that nothing is needed"
+    EVIDENCE  "the exit graph, traversable"
+    EVIDENCE  "a stated floor-space requirement and locomotion mode"
+  END CONTRACT
+
+  STAGE STATIONS
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT LIST
+    INTO   stations
+    ASK
+      An immersive piece, "{book}", for {mode}. Break it into stations: places a
+      visitor stands, looks and acts.
+
+      Reply with ONLY a JSON array, in the order a visitor meets them:
+      [{"anchor":"…","title":"…","beat":"…","exits":["…"]}]
+
+      anchor: where it is — a room, a surface, a marker, "wherever the visitor is".
+      exits:  the stations reachable from it. A visitor is not on rails.
+    END ASK
+    VALIDATE COUNT(stations) > 0
+  END STAGE
+
+  STAGE PLACE
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT TEXT
+    REPEAT FOREACH stations
+    INTO   station.lead
+    ASK
+      Station {station.title}, anchored at {station.anchor}.
+      ONE paragraph of 50 to 90 words: what a visitor sees and hears standing there,
+      in the vocabulary the piece uses. Do not say it is immersive or breathtaking.
+    END ASK
+  END STAGE
+
+  STAGE ACT
+    RESOLUTION MID
+    VERB   CREATE
+    EXPECT TEXT
+    FROM   station.lead
+    INTO   station.interaction
+    ASK
+      Same station. What can the visitor DO here and what answers them? Name the input
+      plainly — gaze, a hand, a controller, a step, a spoken word — and say what happens
+      if they do nothing at all, because most visitors will. 50 to 90 words.
+    END ASK
+  END STAGE
+
+  STAGE COMFORT
+    RESOLUTION MID
+    VERB   VERIFY
+    EXPECT TEXT
+    INTO   station.comfort
+    ASK
+      Same station. In 40 to 80 words state plainly: whether the visitor moves and how;
+      anything that could make someone unwell and what mitigates it; what a visitor who
+      cannot stand, cannot use both hands, or cannot hear does instead; and the floor
+      space this station needs.
+
+      If a hazard has no mitigation, say so rather than inventing one.
+    END ASK
+    VALIDATE NOT EMPTY(station.comfort)
+    ON FAIL REPAIR
+  END STAGE
+
+  STAGE ASSET
+    RESOLUTION PRO
+    VERB   CREATE
+    EXPECT MODEL
+    OPTIONAL
+    ATTACH INBOX
+    ASK
+      Make the visual for station {station.title}: a glTF/GLB model, or a 360 panorama
+      if the station is a place rather than an object. Save it and bring it back.
+    END ASK
+  END STAGE
+
+  STAGE ABSTRACT
+    RESOLUTION MID
+    VERB   INTEGRATE
+    EXPECT TEXT
+    FROM   stations
+    INTO   book.description
+    ASK
+      Deposit abstract for "{book}", an immersive piece in {count} stations.
+      Two or three HTML paragraphs in <p> tags.
+    END ASK
+  END STAGE
+
+  STAGE MINT
+    RESOLUTION PRO
+    VERB  INTEGRATE
+    GATE  HUMAN "MINT tilasm"
+    EMIT  DOI
+  END STAGE
+END CYCLER

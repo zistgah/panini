@@ -1,0 +1,130 @@
+REM ═══════════════════════════════════════════════════════════════════════
+REM  matba.pni — the print cycler.  مطبع
+REM
+REM  A cycler is a SEQUENCE OF PROMPTS and the outputs they produce.
+REM  Everything below says what to ask, what shape the answer takes,
+REM  where it goes, and who may move on.  Edit it; it is not code.
+REM ═══════════════════════════════════════════════════════════════════════
+
+CYCLER MATBA
+  TITLE   "Matba"
+  SCRIPT  "مطبع"
+  OUTPUT  PRINT
+  UNIT    "plate"
+  PURPOSE "Set something that will be read on a page: a paper, a book, a poster, a manual."
+
+  CONTRACT
+    REFUSE    "a plate minted twice under two names"
+    REFUSE    "the jacket counted as a chapter"
+    REFUSE    "a file in assets that no chapter declares"
+    INVARIANT "no broken forme takes an impression"
+    EVIDENCE  "a content hash per plate"
+    EVIDENCE  "a sealed manifest that verifies"
+  END CONTRACT
+
+  STAGE INTAKE
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT LIST
+    INTO   plates
+    ASK
+      You are given the plates of "{book}". List them in reading order.
+
+      Reply with ONLY a JSON array, one object per plate:
+
+      [{"file":"…","title":"…","part":"…"}]
+
+      title: how a contents list would name it, under 60 characters.
+      part:  the section of the book it belongs to.
+    END ASK
+    VALIDATE COUNT(plates) > 0
+    ON FAIL REPAIR
+  END STAGE
+
+  STAGE LEAD
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT TEXT
+    REPEAT FOREACH plates
+    INTO   plate.lead
+    ASK
+      Plate {plate.title} of "{book}".
+
+      Write ONE paragraph of 60 to 110 words that a reader meets before they see it.
+      State what the plate contains, in its own vocabulary. Do not praise it and do
+      not introduce a term the plate does not use.
+
+      Reply with the paragraph only.
+    END ASK
+    VALIDATE WORDS(plate.lead) >= 45
+    ON FAIL REPAIR
+  END STAGE
+
+  STAGE LOOK
+    RESOLUTION MID
+    VERB   CREATE
+    EXPECT TEXT
+    FROM   plate.lead
+    INTO   plate.explanation
+    ASK
+      Same plate. Name the single panel or claim a reader should look at first,
+      and say why it is load-bearing rather than decorative. Preserve any hedging
+      the plate itself uses: if it says hypothesis, keep that word.
+
+      60 to 110 words. Reply with the paragraph only.
+    END ASK
+  END STAGE
+
+  STAGE INDEX
+    RESOLUTION MID
+    VERB   CREATE
+    EXPECT JSON
+    INTO   plate.index
+    ASK
+      Same plate. Reply with ONLY this JSON:
+
+      {"title":"…","subtitle":"…","topics":["…","…","…"]}
+
+      topics: 4 to 6 lowercase index terms drawn from the plate's own vocabulary.
+    END ASK
+    VALIDATE HAS(plate.index, "title")
+  END STAGE
+
+  STAGE ABSTRACT
+    RESOLUTION MID
+    VERB   INTEGRATE
+    EXPECT TEXT
+    FROM   plates
+    INTO   book.description
+    ASK
+      Write the deposit abstract for "{book}" as two or three HTML paragraphs in
+      <p> tags. State what the work contains and what its primitives mean, not why
+      it matters. Preserve any hedging in the source. No marketing language.
+    END ASK
+    VALIDATE WORDS(book.description) > 60
+  END STAGE
+
+  STAGE CHECK
+    RESOLUTION PRO
+    VERB   VERIFY
+    PRINT "checking the forme"
+    IF EMPTY(book.description) THEN
+      PRINT "no abstract — a blank deposit abstract is permanent too"
+    END IF
+  END STAGE
+
+  STAGE SEAL
+    RESOLUTION PRO
+    VERB   INTEGRATE
+    GATE   HUMAN "SEAL matba"
+    EMIT   MANIFEST "MANIFEST.sha256"
+  END STAGE
+
+  STAGE MINT
+    RESOLUTION PRO
+    VERB   INTEGRATE
+    GATE   HUMAN "MINT matba"
+    EMIT   DOI
+    ENVELOPE "a DOI is a dated public disclosure and cannot be withdrawn"
+  END STAGE
+END CYCLER

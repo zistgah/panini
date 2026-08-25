@@ -1,0 +1,50 @@
+{
+  "name": "panini",
+  "displayName": "PANINI — prompt cycles",
+  "description": "Language support for PANINI: syntax, snippets, live checking, and a runner for .pni cyclers.",
+  "version": "1.0.0",
+  "publisher": "ayeai",
+  "license": "Apache-2.0",
+  "repository": { "type": "git", "url": "https://github.com/zistgah/panini" },
+  "engines": { "vscode": "^1.75.0" },
+  "categories": ["Programming Languages", "Snippets", "Linters"],
+  "main": "./extension.js",
+  "activationEvents": ["onLanguage:panini"],
+  "contributes": {
+    "languages": [{
+      "id": "panini",
+      "aliases": ["PANINI", "panini"],
+      "extensions": [".pni"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "panini",
+      "scopeName": "source.panini",
+      "path": "./syntaxes/panini.tmLanguage.json"
+    }],
+    "snippets": [{ "language": "panini", "path": "./snippets.json" }],
+    "commands": [
+      { "command": "panini.check",   "title": "PANINI: Check this cycler",  "category": "PANINI" },
+      { "command": "panini.run",     "title": "PANINI: Run the cycle here", "category": "PANINI" },
+      { "command": "panini.outline", "title": "PANINI: Show stages by resolution", "category": "PANINI" }
+    ],
+    "configuration": {
+      "title": "PANINI",
+      "properties": {
+        "panini.resolution": {
+          "type": "string", "enum": ["EASY","MID","PRO"], "default": "MID",
+          "description": "Level of resolution to preview. This changes what you SEE, never what is computed."
+        },
+        "panini.providers": {
+          "type": "array", "default": [],
+          "description": "Click-through targets for a prompt. Ships empty here; the desk ships a config with entries. Order is alphabetical, never a ranking."
+        },
+        "panini.localEndpoint": {
+          "type": "string", "default": "",
+          "description": "An address on your own machine. Keyless. Nothing leaves the machine."
+        },
+        "panini.checkOnSave": { "type": "boolean", "default": true }
+      }
+    }
+  }
+}

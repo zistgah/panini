@@ -1,0 +1,98 @@
+{
+  "New cycler": {
+    "prefix": "cycler",
+    "body": [
+      "REM  ${1:name}.pni — ${2:what comes out}",
+      "",
+      "CYCLER ${1/(.*)/${1:/upcase}/}",
+      "  TITLE   \"${3:Title}\"",
+      "  SCRIPT  \"${4:}\"",
+      "  OUTPUT  ${5|PRINT,VISUAL,AUDIO,IMMERSIVE,EMBODIED,RECORD|}",
+      "  UNIT    \"${6:item}\"",
+      "  PURPOSE \"${7:What a person is trying to do.}\"",
+      "",
+      "  CONTRACT",
+      "    REFUSE    \"${8:what it will not do, and this IS the specification}\"",
+      "    INVARIANT \"${9:what must never stop being true}\"",
+      "    EVIDENCE  \"${10:what must exist before it may be called done}\"",
+      "  END CONTRACT",
+      "",
+      "  STAGE ${11:FIRST}",
+      "    RESOLUTION EASY",
+      "    VERB   CREATE",
+      "    EXPECT TEXT",
+      "    INTO   ${12:result}",
+      "    ASK",
+      "      $0",
+      "    END ASK",
+      "  END STAGE",
+      "END CYCLER"
+    ],
+    "description": "A complete cycler with its contract"
+  },
+  "Stage": {
+    "prefix": "stage",
+    "body": [
+      "STAGE ${1:NAME}",
+      "  RESOLUTION ${2|EASY,MID,PRO|}",
+      "  VERB   ${3|CREATE,VERIFY,EXECUTE,MEASURE,FALSIFY,INTEGRATE|}",
+      "  EXPECT ${4|TEXT,JSON,LIST,NUMBER,IMAGE,AUDIO,VIDEO,MODEL,DOCUMENT,DATA,SIGNAL,TRAJECTORY,ANY|}",
+      "  INTO   ${5:target}",
+      "  ASK",
+      "    $0",
+      "  END ASK",
+      "END STAGE"
+    ],
+    "description": "A stage that asks for something"
+  },
+  "Gated stage": {
+    "prefix": "gate",
+    "body": [
+      "STAGE ${1:MINT}",
+      "  RESOLUTION PRO",
+      "  VERB  INTEGRATE",
+      "  GATE  HUMAN \"${2:MINT thing}\"",
+      "  EMIT  ${3|DOI,REPO,MANIFEST|}",
+      "  ENVELOPE \"${4:the consequence, in plain words}\"",
+      "END STAGE"
+    ],
+    "description": "A boundary only a human may cross"
+  },
+  "Binary stage": {
+    "prefix": "binary",
+    "body": [
+      "STAGE ${1:ASSET}",
+      "  RESOLUTION PRO",
+      "  VERB   CREATE",
+      "  EXPECT ${2|IMAGE,AUDIO,VIDEO,MODEL,DOCUMENT,ANY|}",
+      "  OPTIONAL",
+      "  ATTACH INBOX",
+      "  ASK",
+      "    ${0:Make it, save it to your device, and bring it back through the inbox.}",
+      "  END ASK",
+      "END STAGE"
+    ],
+    "description": "An answer that is a file, returning through the artefact inbox"
+  },
+  "Repeat over a list": {
+    "prefix": "repeat",
+    "body": ["REPEAT FOREACH ${1:items}"],
+    "description": "Run this stage once per item"
+  },
+  "Validate": {
+    "prefix": "validate",
+    "body": ["VALIDATE ${1|WORDS,LEN,COUNT|}(${2:target}) ${3|>,>=,<,<=,=,<>|} ${4:40}", "ON FAIL ${5|REPAIR,CLARIFY|}"],
+    "description": "A check that bites, and where it routes"
+  },
+  "Contract": {
+    "prefix": "contract",
+    "body": [
+      "CONTRACT",
+      "  REFUSE    \"$1\"",
+      "  INVARIANT \"$2\"",
+      "  EVIDENCE  \"$3\"",
+      "END CONTRACT"
+    ],
+    "description": "What it refuses, what must stay true, what must exist"
+  }
+}

@@ -1,0 +1,93 @@
+REM  awaz.pni — the audio cycler.  آواز
+REM  A recording offers no frame to grab, so the waveform IS the picture.
+
+CYCLER AWAZ
+  TITLE   "Awaz"
+  SCRIPT  "آواز"
+  OUTPUT  AUDIO
+  UNIT    "passage"
+  PURPOSE "Make something to be heard: a song, a podcast, a lecture, an oral history, an audiobook."
+
+  CONTRACT
+    REFUSE    "a cue that ends before it starts or runs past the end"
+    REFUSE    "a transcript that invents a word it could not hear"
+    INVARIANT "passages are cues into one recording, never cut copies"
+    EVIDENCE  "the recording sha256 in the metadata"
+    EVIDENCE  "a waveform computed from the samples, not drawn"
+  END CONTRACT
+
+  STAGE PASSAGES
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT LIST
+    INTO   passages
+    ASK
+      A recording from "{book}", {duration} long. Divide it into passages.
+
+      Reply with ONLY a JSON array, in order:
+      [{"start":"0:00","end":"1:20","title":"…","beat":"…"}]
+
+      beat: what changes there — a key, a speaker, a section, a turn in the argument.
+    END ASK
+    VALIDATE COUNT(passages) > 0
+  END STAGE
+
+  STAGE TRANSCRIBE
+    RESOLUTION MID
+    VERB   MEASURE
+    EXPECT TEXT
+    OPTIONAL
+    REPEAT FOREACH passages
+    INTO   passage.transcript
+    ASK
+      Transcribe passage {passage.title}, {passage.start} to {passage.end}. Verbatim.
+      Mark each speaker if there is more than one. Mark [inaudible] where it is, and
+      do not guess at it. Where it is not speech, describe what is heard in one line.
+    END ASK
+  END STAGE
+
+  STAGE HEARD
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT TEXT
+    FROM   passage.transcript
+    INTO   passage.lead
+    ASK
+      Passage {passage.title}, {passage.start} to {passage.end}.
+      ONE paragraph of 50 to 90 words describing what is heard, in the vocabulary the
+      recording itself uses.
+    END ASK
+    VALIDATE WORDS(passage.lead) >= 40
+  END STAGE
+
+  STAGE LISTENFOR
+    RESOLUTION MID
+    VERB   CREATE
+    EXPECT TEXT
+    FROM   passage.lead
+    INTO   passage.explanation
+    ASK
+      Same passage. Name the one thing a listener should attend to and why it carries
+      the passage. Preserve any hedging the recording uses. 50 to 90 words.
+    END ASK
+  END STAGE
+
+  STAGE ABSTRACT
+    RESOLUTION MID
+    VERB   INTEGRATE
+    EXPECT TEXT
+    FROM   passages
+    INTO   book.description
+    ASK
+      Deposit abstract for "{book}", a recording of {duration} in {count} passages.
+      Two or three HTML paragraphs in <p> tags.
+    END ASK
+  END STAGE
+
+  STAGE MINT
+    RESOLUTION PRO
+    VERB  INTEGRATE
+    GATE  HUMAN "MINT awaz"
+    EMIT  DOI
+  END STAGE
+END CYCLER

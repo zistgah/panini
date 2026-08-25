@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PANINI — the studio</title>
+<meta name=description content="Cyclers are configuration you can read. Load a .pni, turn the resolution dial, and hand each prompt to whichever AI you use.">
+<meta name=theme-color content="#141019">
+<style>
+:root{--ink:#141019;--panel:#1c1724;--paper:#ece6f2;--dim:rgba(236,230,242,.52);
+--rule:rgba(236,230,242,.12);--acc:#c9a227;--acc2:#7ec8a9;--warn:#c46b5a;--gate:#c4457b;
+--disp:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--ink);color:var(--paper);font:15px/1.6 var(--mono);
+display:grid;grid-template-rows:auto 1fr auto;overflow:hidden}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button,select,input,textarea{font:inherit;color:inherit;background:transparent;border:1px solid var(--rule)}
+button{cursor:pointer;padding:.5rem .8rem;border-radius:2px}
+button.go{background:linear-gradient(#d3ac3c,#96702a);color:#141019;border:0;font-weight:600;
+letter-spacing:.08em;text-transform:uppercase;font-size:.7rem}
+button.go:hover{filter:brightness(1.1)}
+header{display:flex;align-items:center;gap:.9rem;padding:.6rem 1rem;background:var(--panel);
+border-bottom:1px solid var(--rule);flex-wrap:wrap}
+header b{font-family:var(--disp);font-size:1.5rem;font-weight:400;letter-spacing:.14em;color:var(--acc)}
+header .dev{font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;color:var(--dim)}
+header .sp{flex:1}
+#dial{display:flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden}
+#dial button{border:0;border-radius:0;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
+padding:.45rem .75rem;color:var(--dim)}
+#dial button[aria-pressed=true]{background:var(--acc);color:#141019}
+main{display:grid;grid-template-columns:15rem 1fr;min-height:0}
+@media(max-width:56rem){main{grid-template-columns:1fr}#rail{display:none}}
+#rail{background:var(--panel);border-right:1px solid var(--rule);overflow:auto;padding:.6rem}
+.lbl{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);padding:.6rem .4rem .35rem}
+.cy{display:block;width:100%;text-align:left;padding:.5rem .55rem;margin-bottom:.25rem;
+border:1px solid var(--rule);border-radius:2px;background:rgba(255,255,255,.02)}
+.cy:hover{border-color:var(--acc)}
+.cy[aria-pressed=true]{border-color:var(--acc);box-shadow:inset 2px 0 0 var(--acc)}
+.cy b{display:block;font-family:var(--disp);font-size:1.05rem;font-weight:400}
+.cy span{display:block;font-size:.6rem;color:var(--dim)}
+#work{overflow:auto;padding:1rem 1.2rem 2rem;min-width:0}
+.blank{max-width:44ch;margin:4rem auto;color:var(--dim);text-align:center}
+.blank h2{font-family:var(--disp);font-size:1.7rem;font-weight:400;color:var(--paper);margin:0 0 .5rem}
+.spine{display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:1rem}
+.pip{border:1px solid var(--rule);border-radius:2px;padding:.35rem .55rem;font-size:.62rem;
+letter-spacing:.06em;color:var(--dim)}
+.pip.now{border-color:var(--acc);color:var(--acc)}
+.pip.done{border-color:rgba(126,200,169,.5);color:var(--acc2)}
+.pip.gate{border-color:rgba(196,69,123,.5);color:var(--gate)}
+h3{font-family:var(--disp);font-weight:400;font-size:1.4rem;margin:0 0 .1rem}
+.meta{font-size:.68rem;color:var(--dim);margin-bottom:.8rem}
+pre.prompt{background:#0c0910;border:1px solid var(--rule);border-left:3px solid var(--acc);
+padding:.9rem 1rem;white-space:pre-wrap;font-size:13px;line-height:1.65;margin:0 0 .7rem;
+max-height:24rem;overflow:auto}
+.bar{display:flex;gap:.45rem;flex-wrap:wrap;align-items:center;margin:.6rem 0}
+textarea{width:100%;min-height:5rem;padding:.6rem;border-radius:2px;background:rgba(255,255,255,.03);resize:vertical}
+.note{font-size:.75rem;color:var(--dim);margin:.4rem 0 0}
+.note.bad{color:var(--warn)}.note.good{color:var(--acc2)}
+.boundary{border-left:3px solid var(--gate);padding:.5rem .8rem;margin:.6rem 0;
+background:rgba(196,69,123,.07);font-size:.75rem;color:var(--dim)}
+.gatebox{border:1px solid var(--gate);border-radius:2px;padding:1rem;background:rgba(196,69,123,.06)}
+.gatebox h4{margin:0 0 .3rem;font-family:var(--disp);font-weight:400;font-size:1.2rem;color:var(--gate)}
+details{border:1px solid var(--rule);border-radius:2px;padding:.6rem .8rem;margin-top:.8rem}
+summary{cursor:pointer;font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--acc)}
+details[open] summary{margin-bottom:.7rem}
+.row{display:grid;gap:.5rem;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))}
+label{display:block;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem}
+input[type=text],input[type=password],select{width:100%;padding:.4rem .5rem;border-radius:2px;
+background:rgba(255,255,255,.03)}
+.prov{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.4rem}
+.prov a{font-size:.62rem;letter-spacing:.06em;padding:.42rem .6rem;border:1px solid var(--rule);
+border-radius:2px;color:var(--acc);text-decoration:none}
+.prov a:hover{border-color:var(--acc)}
+#src{width:100%;min-height:16rem;font-size:12px;line-height:1.55;padding:.7rem;border-radius:2px;
+background:#0c0910}
+canvas{border:1px solid var(--rule);border-radius:2px;background:#0c0910;display:block;margin-top:.5rem}
+footer{padding:.4rem 1rem;background:var(--panel);border-top:1px solid var(--rule);
+font-size:.65rem;color:var(--dim);display:flex;gap:1.2rem;flex-wrap:wrap}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+
+<header>
+  <b>PANINI</b><span class=dev>prompt cycles</span>
+  <span class=sp></span>
+  <span class=dev id=res-label>resolution</span>
+  <div id=dial role=group aria-label="Level of resolution"></div>
+  <button id=settings>Settings</button>
+</header>
+
+<main>
+  <nav id=rail><div class=lbl>Cyclers</div><div id=list></div>
+    <div class=lbl style="margin-top:.6rem">Source</div>
+    <button class=cy id=openfile><b>Open a .pni</b><span>from this machine</span></button>
+    <button class=cy id=editsrc><b>Edit the text</b><span>a cycler is configuration</span></button>
+    <input type=file id=fin accept=".pni,.txt" hidden>
+  </nav>
+  <section id=work>
+    <div class=blank>
+      <h2>Pick a cycler.</h2>
+      <p>Each one is a plain text file you can read and change. The dial above is a level of
+         resolution over the same text — it never changes what is asked or computed.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span id=where>nothing loaded</span>
+  <span class=sp style=flex:1></span>
+  <span>local only · no key required · nothing is sent until you choose to send it</span>
+</footer>
+
+<script type=module>
+import P from './panini.js';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const CYCLERS = ['matba','khwab','awaz','tilasm','pench','yadein'];
+let src = '', M = null, res = localStorage.getItem('panini.res') || 'MID';
+let cfg = { providers: [], endpoint: '', key: '', reply: '', body: '' };
+try { Object.assign(cfg, JSON.parse(localStorage.getItem('panini.cfg') || '{}')); } catch (e) {}
+
+/* Ships WITH entries so the tool works out of the box. Alphabetical, so the order is not a
+   ranking. Editable and deletable — delete every one and the studio still works. */
+if (!cfg.providers.length) cfg.providers = [
+  { name: 'ChatGPT',    url: 'https://chatgpt.com/?q={prompt}' },
+  { name: 'Claude',     url: 'https://claude.ai/new' },
+  { name: 'Copilot',    url: 'https://copilot.microsoft.com/' },
+  { name: 'DeepSeek',   url: 'https://chat.deepseek.com/' },
+  { name: 'Gemini',     url: 'https://gemini.google.com/app' },
+  { name: 'Grok',       url: 'https://grok.com/' },
+  { name: 'Le Chat',    url: 'https://chat.mistral.ai/chat' },
+  { name: 'Perplexity', url: 'https://www.perplexity.ai/?q={prompt}' },
+  { name: 'Qwen',       url: 'https://chat.qwen.ai/' }
+];
+
+function dial() {
+  const d = $('#dial'); d.innerHTML = '';
+  for (const r of P.RESOLUTIONS) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = r;
+    b.setAttribute('aria-pressed', String(r === res));
+    b.title = { EASY:'the spine only', MID:'the working stages', PRO:'every stage and every property' }[r];
+    b.onclick = () => { res = r; localStorage.setItem('panini.res', r); if (M) M.setResolution(r); dial(); draw(); };
+    d.append(b);
+  }
+}
+
+async function loadCycler(id) {
+  try {
+    const r = await fetch('cyclers/' + id + '.pni', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    boot(await r.text(), id + '.pni');
+  } catch (e) {
+    $('#work').innerHTML = '<div class=blank><h2>Could not read that cycler.</h2><p>' + esc(e.message) +
+      '. That is unknown, not empty — nothing is shown rather than guessed.</p></div>';
+  }
+}
+
+function boot(text, label) {
+  src = text;
+  try { M = P.run(src, { resolution: res }); }
+  catch (e) {
+    $('#work').innerHTML = '<div class=blank><h2>That will not parse.</h2><pre class=prompt>' +
+      esc(e.message) + '</pre></div>';
+    return;
+  }
+  const problems = P.check(P.parse(src));
+  $('#where').textContent = label + ' · ' + M.cycler.id + ' · ' + M.cycler.stages.length +
+    ' stages' + (problems.length ? ' · ' + problems.length + ' problems' : ' · checks clean');
+  list(); draw(problems);
+}
+
+function list() {
+  const el = $('#list'); el.innerHTML = '';
+  for (const id of CYCLERS) {
+    const b = document.createElement('button');
+    b.className = 'cy'; b.type = 'button';
+    b.setAttribute('aria-pressed', String(!!M && M.cycler.id.toLowerCase() === id));
+    b.innerHTML = '<b>' + esc(id) + '</b><span>cyclers/' + esc(id) + '.pni</span>';
+    b.onclick = () => loadCycler(id);
+    el.append(b);
+  }
+}
+
+function draw(problems = []) {
+  if (!M) return;
+  const w = $('#work'); const c = M.cycler;
+  const vis = M.visible(res);
+  const need = safeStep();
+
+  let h = '<h3>' + esc(c.title || c.id) + (c.script ? ' <span style="color:var(--acc)">' + esc(c.script) + '</span>' : '') + '</h3>';
+  h += '<p class=meta>' + esc(c.output) + ' · ' + esc(c.unit) + ' · ' + esc(c.purpose) + '</p>';
+
+  h += '<div class=spine>';
+  for (const s of vis) {
+    const cls = s === M.stage() ? 'now' : (s.answered || s.gateCrossed ? 'done' : (s.gate ? 'gate' : ''));
+    h += '<span class="pip ' + cls + '">' + esc(s.id) + (s.gate ? ' ⟡' : '') + '</span>';
+  }
+  h += '</div>';
+  h += '<p class=meta>' + vis.length + ' of ' + c.stages.length +
+       ' stages visible at ' + res + '. Resolution changes what you see, never what is computed.</p>';
+
+  if (problems.length) {
+    h += '<div class=boundary><b>This cycler does not check clean.</b><br>' +
+         problems.map(esc).join('<br>') + '</div>';
+  }
+
+  if (!need) { h += '<p class=note>Nothing more to do.</p>'; w.innerHTML = h + settingsBlock() + sourceBlock(); wire(); return; }
+
+  if (need.need === 'done') {
+    h += '<div class=gatebox><h4>The cycle is complete.</h4><p class=note>' +
+      esc(c.contract.evidence.join(' · ') || '') + '</p></div>';
+  } else if (need.need === 'gate') {
+    h += '<div class=gatebox><h4>' + esc(need.stage) + ' — a boundary</h4>' +
+      '<p class=note>' + esc(need.why) + '</p>' +
+      (M.stage().envelope ? '<p class=note bad>' + esc(M.stage().envelope) + '</p>' : '') +
+      '<div class=bar><input type=text id=gateword placeholder="type exactly: ' + esc(need.word || '') + '">' +
+      '<button class=go id=gatego>Cross</button></div>' +
+      '<p class=note id=gatenote></p></div>';
+  } else {
+    const pr = need.prompt;
+    h += '<h4 style="font-family:var(--disp);font-weight:400;margin:.6rem 0 .2rem">' + esc(need.stage) + '</h4>';
+    h += '<p class=meta>' + esc(M.stage().verb || '') + ' · expects ' + esc(pr.expect) +
+         ' · ' + esc(pr.mime) + (need.optional ? ' · optional' : '') + '</p>';
+    h += '<pre class=prompt id=prompt>' + esc(pr.text) + '</pre>';
+    h += '<div class=bar><button class=go id=copy>Copy the prompt</button>';
+    if (cfg.endpoint) h += '<button id=ask>Answer here</button>';
+    h += '<button id=skip>' + (need.optional ? 'Skip' : 'Not now') + '</button></div>';
+    h += '<div class=boundary><b>This is where the studio ends.</b> Nothing has been sent. ' +
+         'Open one of these and the prompt goes with you; your work stays here.</div>';
+    h += '<div class=prov id=prov></div>';
+    h += '<label style="margin-top:.8rem">Paste what came back</label>' +
+         '<textarea id=ans placeholder="' + esc(pr.expect === 'TEXT' ? 'the paragraph' :
+           pr.expect === 'LIST' || pr.expect === 'JSON' ? 'the JSON' :
+           'a file comes back through the inbox — describe it or attach it') + '"></textarea>';
+    h += '<div class=bar><button class=go id=file>File this answer</button>' +
+         (P.EXPECTS.has(pr.expect) && !['TEXT','JSON','LIST','NUMBER','BOOLEAN'].includes(pr.expect)
+           ? '<button id=inbox>Choose a file</button><input type=file id=finb hidden>' : '') +
+         '</div><p class=note id=note></p>';
+  }
+  w.innerHTML = h + settingsBlock() + sourceBlock();
+  wire(need);
+}
+
+function safeStep() { try { return M.step(); } catch (e) { return { need:'error', why:e.message }; } }
+
+function settingsBlock() {
+  return '<details id=setbox><summary>Settings — which AI, or none</summary>' +
+    '<p class=note>The studio is not an AI provider. It builds the prompt and hands it to you. ' +
+    'Links below are configuration: edit them, add to them, delete them. The order is alphabetical, ' +
+    'not a ranking. A server on your own machine needs no key, and typing the answer yourself ' +
+    'always works.</p>' +
+    '<div class=row style="margin-top:.6rem">' +
+    '<div><label>your own endpoint</label><input type=text id=c_ep value="' + esc(cfg.endpoint) + '" placeholder="http://localhost:8080/v1/chat/completions"></div>' +
+    '<div><label>key — leave empty for a local server</label><input type=password id=c_key value="' + esc(cfg.key) + '"></div>' +
+    '<div><label>where the reply lives</label><input type=text id=c_reply value="' + esc(cfg.reply) + '" placeholder="choices.0.message.content"></div>' +
+    '</div>' +
+    '<div style="margin-top:.5rem"><label>request body — "{prompt}" is replaced</label>' +
+    '<textarea id=c_body style="min-height:3.5rem">' + esc(cfg.body) + '</textarea></div>' +
+    '<div class=bar><button id=c_save>Save</button><span class=note id=c_note></span></div>' +
+    '</details>';
+}
+
+function sourceBlock() {
+  return '<details><summary>The cycler, as text</summary>' +
+    '<p class=note>This is the whole thing. Change it and press Reload — no build step, no compiler.</p>' +
+    '<textarea id=src>' + esc(src) + '</textarea>' +
+    '<div class=bar><button class=go id=reload>Reload from this text</button>' +
+    '<button id=download>Save as .pni</button></div></details>';
+}
+
+function wire(need) {
+  const q = id => document.getElementById(id);
+  const note = (t,k) => { const n = q('note'); if (n) { n.textContent = t; n.className = 'note ' + (k||''); } };
+
+  if (q('copy')) q('copy').onclick = async () => {
+    try { await navigator.clipboard.writeText(need.prompt.text); note('Copied. Nothing was sent.', 'good'); }
+    catch (e) { note('This browser blocked the clipboard — select the prompt above.', 'bad'); }
+  };
+  const prov = q('prov');
+  if (prov) for (const p of cfg.providers) {
+    const a = document.createElement('a');
+    a.href = p.url.includes('{prompt}') ? p.url.replace('{prompt}', encodeURIComponent(need.prompt.text)) : p.url;
+    a.target = '_blank'; a.rel = 'noopener'; a.textContent = p.name;
+    a.onclick = () => navigator.clipboard.writeText(need.prompt.text).catch(() => {});
+    prov.append(a);
+  }
+  if (q('ask')) q('ask').onclick = async () => {
+    note('asking your endpoint…');
+    try {
+      const body = JSON.parse((cfg.body || '{"prompt":"{prompt}"}')
+        .replace('"{prompt}"', JSON.stringify(need.prompt.text)));
+      const r = await fetch(cfg.endpoint, { method:'POST',
+        headers: Object.assign({'content-type':'application/json'},
+          cfg.key ? { authorization: 'Bearer ' + cfg.key } : {}),
+        body: JSON.stringify(body) });
+      if (!r.ok) throw new Error('answered ' + r.status);
+      const j = await r.json();
+      const v = String(cfg.reply || 'text').split('.').reduce((o,k) => o == null ? o : o[/^\d+$/.test(k)?+k:k], j);
+      if (typeof v !== 'string') throw new Error('nothing found at "' + (cfg.reply||'text') + '"');
+      q('ans').value = v; note('Answer received. Read it, then file it.', 'good');
+    } catch (e) {
+      note(/Failed to fetch|NetworkError/.test(e.message)
+        ? 'No answer from ' + cfg.endpoint + '. Is it running? Copy-and-paste still works.'
+        : e.message, 'bad');
+    }
+  };
+  if (q('file')) q('file').onclick = () => {
+    const r = M.answer(q('ans').value);
+    if (!r.ok) { note(r.why + '  →  ' + (r.route || 'REPAIR'), 'bad'); return; }
+    draw();
+  };
+  if (q('skip')) q('skip').onclick = () => { M.i++; draw(); };
+  if (q('inbox')) q('inbox').onclick = () => q('finb').click();
+  if (q('finb')) q('finb').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    /* Filesystem visibility is not provenance. Record what was chosen; claim nothing about it. */
+    q('ans').value = f.name + ' (' + f.type + ', ' + f.size + ' bytes) — chosen by the operator; origin not asserted';
+    note('Recorded. The studio does not claim to know what made it.', 'good');
+  };
+  if (q('gatego')) q('gatego').onclick = () => {
+    const r = M.crossGate(q('gateword').value);
+    const n = q('gatenote'); n.textContent = r.why; n.className = 'note ' + (r.ok ? 'good' : 'bad');
+    if (r.ok) setTimeout(draw, 400);
+  };
+  if (q('c_save')) q('c_save').onclick = () => {
+    cfg.endpoint = q('c_ep').value.trim(); cfg.key = q('c_key').value.trim();
+    cfg.reply = q('c_reply').value.trim(); cfg.body = q('c_body').value.trim();
+    try { localStorage.setItem('panini.cfg', JSON.stringify(cfg)); q('c_note').textContent = 'saved in this browser only'; }
+    catch (e) { q('c_note').textContent = 'this browser will not store it — it still works for this session'; }
+  };
+  if (q('reload')) q('reload').onclick = () => boot(q('src').value, 'edited');
+  if (q('download')) q('download').onclick = () => {
+    const b = new Blob([q('src').value], { type:'text/plain' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+    a.download = (M ? M.cycler.id.toLowerCase() : 'cycler') + '.pni';
+    document.body.append(a); a.click(); a.remove();
+  };
+}
+
+$('#openfile').onclick = () => $('#fin').click();
+$('#fin').onchange = async e => { const f = e.target.files[0]; if (f) boot(await f.text(), f.name); };
+$('#editsrc').onclick = () => { const d = document.querySelectorAll('details'); if (d.length) d[d.length-1].open = true; };
+$('#settings').onclick = () => { const s = document.getElementById('setbox'); if (s) s.open = !s.open; };
+
+dial(); list();
+loadCycler('matba');
+</script>
+</body></html>

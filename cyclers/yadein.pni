@@ -1,0 +1,120 @@
+REM  yadein.pni — the record.  یادیں
+REM  THIS IS SOMEBODY'S LIFE, so the default inverts: nothing publishes
+REM  unless that entry was marked for it, one entry at a time.
+
+CYCLER YADEIN
+  TITLE   "Yadein"
+  SCRIPT  "یادیں"
+  OUTPUT  RECORD
+  UNIT    "entry"
+  PURPOSE "Keep a life: a diary, an oral history, a family archive, a research notebook, a longitudinal record accumulated in fragments over years."
+
+  CONTRACT
+    REFUSE    "publishing any entry that was not individually marked"
+    REFUSE    "sharpening a vague date into a precise one"
+    REFUSE    "adding a surname, role or relationship the source never gave"
+    REFUSE    "drawing a lesson where only a record was asked for"
+    INVARIANT "the count withheld is recorded; the content withheld is not"
+    INVARIANT "marking every entry private is a valid outcome, not an error"
+    EVIDENCE  "an explicit mark per entry"
+  END CONTRACT
+
+  STAGE ENTRIES
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT LIST
+    INTO   entries
+    ASK
+      Material for a record, "{book}". Separate it into entries.
+
+      Reply with ONLY a JSON array, in the order things HAPPENED — which may not be the
+      order they were written:
+      [{"when":"1994-08","title":"…","beat":"…"}]
+
+      when: as precise as the material actually supports. "1994", "1994-08",
+      "some summer in the nineties". Do NOT sharpen a vague date into a precise one.
+    END ASK
+    VALIDATE COUNT(entries) > 0
+  END STAGE
+
+  STAGE HAPPENED
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT TEXT
+    REPEAT FOREACH entries
+    INTO   entry.lead
+    ASK
+      Entry {entry.title}, {entry.when}.
+
+      ONE paragraph of 50 to 110 words recording what happened, in the words the material
+      uses. Record it; do not interpret it, do not draw a lesson from it, and do not add a
+      detail the material does not contain. Where the material is uncertain, keep the
+      uncertainty.
+    END ASK
+  END STAGE
+
+  STAGE HOLD
+    RESOLUTION MID
+    VERB   CREATE
+    EXPECT TEXT
+    FROM   entry.lead
+    INTO   entry.hold
+    ASK
+      Same entry. In 40 to 90 words, name what is worth holding on to here and why — a
+      fact, a face, a decision, a turning. This is the part a later reader, or a later
+      you, would want kept.
+    END ASK
+  END STAGE
+
+  STAGE WHO
+    RESOLUTION MID
+    VERB   CREATE
+    EXPECT JSON
+    INTO   entry.people
+    ASK
+      Same entry. Reply with ONLY:
+      {"people":["…"],"places":["…"],"topics":["…"]}
+
+      people: named ONLY as the material names them. Do not add surnames, roles or
+      relationships it does not state. If someone is unnamed there, leave them unnamed here.
+    END ASK
+  END STAGE
+
+  STAGE ATTACH
+    RESOLUTION PRO
+    VERB   INTEGRATE
+    EXPECT ANY
+    OPTIONAL
+    ATTACH INBOX
+    ASK
+      Find what belongs with entry {entry.title} — a photograph, a voice note, a scan,
+      a document. This is not generated. It already exists. Bring it and pick it out.
+    END ASK
+  END STAGE
+
+  STAGE MARK
+    RESOLUTION EASY
+    VERB   VERIFY
+    GATE   HUMAN "MARK entries"
+    ENVELOPE "nothing publishes until every entry carries a mark, and all-private is a valid answer"
+  END STAGE
+
+  STAGE ABSTRACT
+    RESOLUTION MID
+    VERB   INTEGRATE
+    EXPECT TEXT
+    FROM   entries
+    INTO   book.description
+    ASK
+      Deposit abstract for "{book}", a record in {count} entries.
+      Two or three HTML paragraphs in <p> tags.
+    END ASK
+  END STAGE
+
+  STAGE EXPORT
+    RESOLUTION PRO
+    VERB  INTEGRATE
+    GATE  HUMAN "EXPORT yadein"
+    EMIT  REPO
+  END STAGE
+END CYCLER

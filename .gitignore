@@ -1,0 +1,5 @@
+logs/
+*.tar
+*.tar.gz
+node_modules/
+.panini-session.json

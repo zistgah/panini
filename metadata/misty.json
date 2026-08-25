@@ -1,0 +1,15 @@
+{
+  "upload_type": "software",
+  "title": "PANINI: a domain-specific language for expressing prompt cycles as readable configuration",
+  "creators": [{ "name": "Choudhary, Abhishek", "affiliation": "AyeAI", "orcid": "0009-0002-0684-8320" }],
+  "description": "<p>PANINI is a small, line-oriented language in which a human-AI working cycle is written as an ordered sequence of prompts, each declaring the shape its answer must take, the location the answer is stored in, and the authority required to proceed. Its surface syntax deliberately follows the conventions of structured BASIC, so that a workflow becomes a text a domain expert edits rather than a module a programmer maintains.</p><p>Two design positions distinguish it. First, presentation level is treated as resolution rather than mode: a stage declares the level at which it becomes visible, and a conforming implementation is required to produce an identical prompt at every level, so that simplifying the view cannot alter what is asked or computed. Second, the interpreter yields at each prompt rather than dispatching it; the language opens no network connection and names no external service, leaving the choice of clipboard hand-off, operator-supplied endpoint, locally hosted model, or manual answer entirely to the host.</p><p>The type system covers textual and structured answers alongside image, audio, video, three-dimensional model, document and sensor-signal shapes, each carrying a media type. Answers that are files are recorded as selected by the operator, with authorship of the file explicitly not asserted. Stages declare one of six verbs describing what the stage leaves behind; no verb denotes description, and a stage whose prompt requests prose about an artifact rather than the artifact fails static analysis. Irreversible steps are guarded by exact typed words that cannot be defaulted or matched loosely.</p><p>The distribution includes a formal specification with grammar and conformance conditions, a reference implementation, a conformance suite, an editor extension, and six worked cyclers covering print, visual, audio, immersive, embodied and personal-record outputs.</p>",
+  "keywords": ["domain-specific language","prompt engineering","human-AI collaboration",
+    "workflow specification","progressive disclosure","provenance","language specification",
+    "research software","reproducibility","BASIC"],
+  "license": "apache-2.0",
+  "language": "eng",
+  "related_identifiers": [
+    { "identifier": "10.5281/zenodo.21948734", "relation": "isSupplementTo", "scheme": "doi", "resource_type": "software" },
+    { "identifier": "10.5281/zenodo.22005507", "relation": "isSupplementTo", "scheme": "doi", "resource_type": "software" }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "PANINI",
+  "scopeName": "source.panini",
+  "patterns": [
+    { "include": "#comment" }, { "include": "#ask" }, { "include": "#declaration" },
+    { "include": "#contract" }, { "include": "#stageprop" }, { "include": "#enum" },
+    { "include": "#keyword" }, { "include": "#string" }, { "include": "#number" },
+    { "include": "#operator" }, { "include": "#identifier" }
+  ],
+  "repository": {
+    "comment": {
+      "match": "(?i)(^\\s*REM\\b.*$|'.*$)",
+      "name": "comment.line.panini"
+    },
+    "ask": {
+      "begin": "(?i)^\\s*(ASK)\\s*$",
+      "beginCaptures": { "1": { "name": "keyword.control.ask.panini" } },
+      "end": "(?i)^\\s*(END\\s+ASK)\\s*$",
+      "endCaptures": { "1": { "name": "keyword.control.ask.panini" } },
+      "name": "string.unquoted.prompt.panini",
+      "patterns": [
+        { "match": "\\{[A-Za-z_][A-Za-z0-9_.]*\\}", "name": "variable.other.interpolation.panini" },
+        { "match": "(?i)\\b(UNRESOLVED|ONLY|NOT|never|must)\\b", "name": "markup.bold.panini" }
+      ]
+    },
+    "declaration": {
+      "match": "(?i)\\b(CYCLER|END\\s+CYCLER|STAGE|END\\s+STAGE|CONTRACT|END\\s+CONTRACT|SUB|FUNCTION|END\\s+SUB|END\\s+FUNCTION)\\b",
+      "name": "keyword.control.declaration.panini"
+    },
+    "contract": {
+      "match": "(?i)^\\s*(REFUSE|INVARIANT|EVIDENCE|REQUIRE|FORBID)\\b",
+      "captures": { "1": { "name": "keyword.other.contract.panini" } }
+    },
+    "stageprop": {
+      "match": "(?i)^\\s*(RESOLUTION|VERB|EXPECT|INTO|FROM|VALIDATE|GATE|ON\\s+FAIL|OPTIONAL|REPEAT\\s+FOREACH|EMIT|ATTACH|ENVELOPE|TITLE|SCRIPT|OUTPUT|UNIT|PURPOSE|VERSION|AUTHOR|LICENSE)\\b",
+      "captures": { "1": { "name": "entity.name.tag.panini" } }
+    },
+    "enum": {
+      "match": "(?i)\\b(EASY|MID|PRO|CREATE|VERIFY|EXECUTE|MEASURE|FALSIFY|INTEGRATE|TEXT|JSON|LIST|NUMBER|BOOLEAN|IMAGE|AUDIO|VIDEO|MODEL|DOCUMENT|DATA|SIGNAL|TRAJECTORY|ANY|HUMAN|REPAIR|CLARIFY|INBOX|DOI|REPO|MANIFEST)\\b",
+      "name": "constant.language.panini"
+    },
+    "keyword": {
+      "match": "(?i)\\b(LET|PRINT|INPUT|IF|THEN|ELSE|ELSEIF|END\\s+IF|FOR|TO|STEP|NEXT|WHILE|WEND|DIM|AS|GOTO|GOSUB|RETURN|SELECT|CASE|EXIT|CONST|DO|LOOP|UNTIL|AND|OR|NOT|MOD|TRUE|FALSE|NOTHING)\\b",
+      "name": "keyword.control.panini"
+    },
+    "string": {
+      "begin": "\"", "end": "\"", "name": "string.quoted.double.panini",
+      "patterns": [{ "match": "\\\\.", "name": "constant.character.escape.panini" }]
+    },
+    "number": { "match": "\\b[0-9][0-9_.]*\\b", "name": "constant.numeric.panini" },
+    "operator": { "match": "(<=|>=|<>|[-+*/\\\\^=<>])", "name": "keyword.operator.panini" },
+    "identifier": { "match": "\\b[A-Za-z_][A-Za-z0-9_.$]*\\b", "name": "variable.other.panini" }
+  }
+}

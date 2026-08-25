@@ -1,0 +1,130 @@
+REM  pench.pni — the embodied cycler.  پیچ
+REM  THE THING DESCRIBED HERE CAN MOVE AND CAN INJURE. That is why the
+REM  envelope is not an optional field and why an unknown limit must be
+REM  written "not established" rather than estimated.
+
+CYCLER PENCH
+  TITLE   "Pench"
+  SCRIPT  "پیچ"
+  OUTPUT  EMBODIED
+  UNIT    "manoeuvre"
+  PURPOSE "Put intent into the physical world: a robot, a cyberphysical system, factory automation, a digital twin, transfer in either direction between simulation and reality."
+
+  CONTRACT
+    REFUSE    "a manoeuvre with no stated operating envelope"
+    REFUSE    "an invented limit in place of an unknown one"
+    REFUSE    "a sim-to-real claim that names no hardware run"
+    INVARIANT "an unknown limit is written not-established, never estimated"
+    EVIDENCE  "what a run produced: a log, a bag file, a plot, a capture"
+    EVIDENCE  "stated limits, or a stated absence of them"
+  END CONTRACT
+
+  STAGE MANOEUVRES
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT LIST
+    INTO   manoeuvres
+    ASK
+      Embodied work, "{book}", on {platform}. Break it into manoeuvres.
+
+      Reply with ONLY a JSON array, in the order they are performed:
+      [{"title":"…","precondition":"…","beat":"…"}]
+
+      precondition: what must already be true before it may start.
+    END ASK
+    VALIDATE COUNT(manoeuvres) > 0
+  END STAGE
+
+  STAGE MOTION
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT TEXT
+    REPEAT FOREACH manoeuvres
+    INTO   manoeuvre.lead
+    ASK
+      Manoeuvre {manoeuvre.title} on {platform}.
+      Precondition: {manoeuvre.precondition}
+
+      ONE paragraph of 50 to 90 words: what the system does, in the vocabulary the work
+      uses. Name the actuators and the sensors that matter.
+    END ASK
+  END STAGE
+
+  STAGE ENVELOPE
+    RESOLUTION EASY
+    VERB   MEASURE
+    EXPECT TEXT
+    INTO   manoeuvre.envelope
+    ASK
+      Same manoeuvre. State the operating envelope in 60 to 110 words. Be specific and
+      refuse to guess:
+
+      — the limits it must stay inside: reach, force, speed, torque, temperature, current
+      — what is in range of it, including people, and how they are kept out
+      — how it is stopped, by whom, and how quickly
+      — what happens if power, network or a sensor is lost mid-manoeuvre
+      — what it must NOT be run near
+
+      Where a limit is not known, write "not established" rather than a plausible number.
+      An invented limit is worse than an absent one.
+    END ASK
+    VALIDATE NOT EMPTY(manoeuvre.envelope)
+    ON FAIL REPAIR
+  END STAGE
+
+  STAGE GAP
+    RESOLUTION MID
+    VERB   VERIFY
+    EXPECT TEXT
+    FROM   manoeuvre.envelope
+    INTO   manoeuvre.gap
+    ASK
+      Same manoeuvre. In 50 to 90 words: what ran in simulation, what ran on hardware,
+      and where they disagreed. Name the disagreement rather than smoothing it — friction,
+      latency, compliance, sensor noise, backlash, thermal drift.
+
+      If it has only ever been simulated, say exactly that. Do not describe a transfer
+      that has not happened.
+    END ASK
+    VALIDATE NOT EMPTY(manoeuvre.gap)
+  END STAGE
+
+  STAGE PROOF
+    RESOLUTION MID
+    VERB   EXECUTE
+    EXPECT ANY
+    OPTIONAL
+    ATTACH INBOX
+    ASK
+      Bring back what an actual run produced for {manoeuvre.title}: a log, a bag file,
+      a plot, a capture. This is not generated — it is captured. Run it, record it,
+      and bring it back through the inbox.
+    END ASK
+  END STAGE
+
+  STAGE ABSTRACT
+    RESOLUTION MID
+    VERB   INTEGRATE
+    EXPECT TEXT
+    FROM   manoeuvres
+    INTO   book.description
+    ASK
+      Deposit abstract for "{book}", embodied work in {count} manoeuvres.
+      Two or three HTML paragraphs in <p> tags.
+    END ASK
+  END STAGE
+
+  STAGE SAFETYGATE
+    RESOLUTION PRO
+    VERB  VERIFY
+    GATE  HUMAN "ENVELOPE reviewed"
+    ENVELOPE "no manoeuvre publishes without a reviewed envelope"
+  END STAGE
+
+  STAGE MINT
+    RESOLUTION PRO
+    VERB  INTEGRATE
+    GATE  HUMAN "MINT pench"
+    EMIT  DOI
+  END STAGE
+END CYCLER

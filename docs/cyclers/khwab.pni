@@ -1,0 +1,105 @@
+REM  khwab.pni — the visual cycler.  خواب
+REM  A single image is the smallest member of the family; this scales through
+REM  skits and features to a long-running series without changing shape.
+
+CYCLER KHWAB
+  TITLE   "Khwab"
+  SCRIPT  "خواب"
+  OUTPUT  VISUAL
+  UNIT    "shot"
+  PURPOSE "Make something to be watched, at any length: an image, a diagram, a skit, a feature, a series."
+
+  CONTRACT
+    REFUSE    "a chapter pointing at an image that is not there"
+    REFUSE    "claiming a file in a folder was produced by an AI"
+    INVARIANT "one media file serves every shot that cues into it"
+    EVIDENCE  "a poster per shot, cut from the reel itself"
+  END CONTRACT
+
+  STAGE SHOTS
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT LIST
+    INTO   shots
+    ASK
+      A reel from "{book}", {duration} long. Break it into shots.
+
+      Reply with ONLY a JSON array, in order:
+      [{"start":"0:00","end":"0:07","title":"…","beat":"…"}]
+
+      start and end are m:ss timecodes. beat: one clause naming what changes.
+      If the reel is one unbroken shot, return an array of length 1.
+    END ASK
+    VALIDATE COUNT(shots) > 0
+    ON FAIL REPAIR
+  END STAGE
+
+  STAGE ONSCREEN
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT TEXT
+    REPEAT FOREACH shots
+    INTO   shot.lead
+    ASK
+      Shot {shot.title}, {shot.start} to {shot.end}.
+
+      ONE paragraph of 50 to 90 words: what is on screen, in the vocabulary the reel
+      itself uses. State what happens; do not praise it.
+    END ASK
+    VALIDATE WORDS(shot.lead) >= 40
+  END STAGE
+
+  STAGE WATCHFOR
+    RESOLUTION MID
+    VERB   CREATE
+    EXPECT TEXT
+    FROM   shot.lead
+    INTO   shot.explanation
+    ASK
+      Same shot. Name the one thing a viewer should watch for and why it carries the
+      shot rather than decorating it. 50 to 90 words.
+    END ASK
+  END STAGE
+
+  STAGE INDEX
+    RESOLUTION MID
+    VERB   CREATE
+    EXPECT JSON
+    INTO   shot.index
+    ASK
+      Same shot. Reply with ONLY: {"title":"…","subtitle":"…","topics":["…"]}
+    END ASK
+  END STAGE
+
+  STAGE POSTER
+    RESOLUTION PRO
+    VERB   CREATE
+    EXPECT IMAGE
+    OPTIONAL
+    ATTACH INBOX
+    ASK
+      Make a single still for shot {shot.title}. One image. No text baked in unless
+      the shot itself carries text. Save it and bring it back through the inbox.
+    END ASK
+  END STAGE
+
+  STAGE ABSTRACT
+    RESOLUTION MID
+    VERB   INTEGRATE
+    EXPECT TEXT
+    FROM   shots
+    INTO   book.description
+    ASK
+      Deposit abstract for "{book}", a reel of {duration} in {count} shots.
+      Two or three HTML paragraphs in <p> tags. What it contains, not why it matters.
+    END ASK
+  END STAGE
+
+  STAGE MINT
+    RESOLUTION PRO
+    VERB  INTEGRATE
+    GATE  HUMAN "MINT khwab"
+    EMIT  DOI
+    ENVELOPE "the reel is minted with the book: one file, one hash, one deposit"
+  END STAGE
+END CYCLER
