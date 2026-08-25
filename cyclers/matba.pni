@@ -22,6 +22,52 @@ CYCLER MATBA
     EVIDENCE  "a sealed manifest that verifies"
   END CONTRACT
 
+  REM ── Start here. You do not need plates yet; you need to know what the book IS. ──
+
+  STAGE CONCEPT
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT JSON
+    INTO   book
+    ASK
+      I want to set something that will be read on a page. Help me work out what it is.
+
+      Ask me nothing back — read what I have written below and reply with ONLY this JSON:
+
+      {"title":"…","subtitle":"…","kind":"paper|book|poster|manual|curriculum|filing",
+       "reader":"who picks this up and why","claim":"the one thing it asserts",
+       "parts":["…","…"],"done_when":"how I will know it is finished"}
+
+      claim: the single load-bearing assertion. If I have written three, pick the one the
+      others rest on and say so in the subtitle.
+      parts: the sections a reader moves through. Three to seven. If my material does not
+      support that many, return fewer rather than inventing them.
+      done_when: a condition I can check, not an aspiration.
+
+      What I have so far:
+      {seed}
+    END ASK
+    VALIDATE HAS(book, "claim")
+    ON FAIL CLARIFY
+  END STAGE
+
+  STAGE SHAPE
+    RESOLUTION MID
+    VERB   VERIFY
+    EXPECT TEXT
+    FROM   book
+    INTO   book.shape
+    ASK
+      Given that concept, tell me in 60 to 110 words what this book must contain to be worth
+      reading, and what it must NOT contain.
+
+      Name the one section a sceptical reader would turn to first. Name the section that, if
+      it is thin, makes the whole thing thin. If the concept cannot carry a book yet, say
+      that plainly and say what is missing.
+    END ASK
+  END STAGE
+
+
   STAGE INTAKE
     RESOLUTION EASY
     VERB   CREATE

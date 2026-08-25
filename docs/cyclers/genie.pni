@@ -1,0 +1,308 @@
+REM ═══════════════════════════════════════════════════════════════════════
+REM  genie.pni — the Prompt Operating System, as a cycler.
+REM
+REM  Every prompt here must CREATE, VERIFY, EXECUTE, MEASURE, FALSIFY or
+REM  INTEGRATE an artifact. None of them describes one.
+REM
+REM  Each cycle must leave behind a more complete, executable artifact
+REM  than the previous cycle.
+REM ═══════════════════════════════════════════════════════════════════════
+
+CYCLER GENIE
+  TITLE   "Genie"
+  OUTPUT  RESEARCH
+  UNIT    "component"
+  PURPOSE "Build a research artifact from nothing: discover, specify, formalize, implement, verify, simulate, experiment, falsify, document, audit, refine."
+
+  CONTRACT
+    REFUSE    "a step that produces prose ABOUT a thing rather than the thing"
+    REFUSE    "a PASS with no evidence"
+    REFUSE    "a measurement with no units and no uncertainty"
+    REFUSE    "saying the research is complete"
+    REFUSE    "an untagged statement, which would be read as derived"
+    INVARIANT "a hypothesis never becomes a derived fact by restatement"
+    INVARIANT "where it is not known, it says UNRESOLVED"
+    EVIDENCE  "every component names what it still needs before it could be called done"
+  END CONTRACT
+
+  REM ── LAYER 0. The constitution of this piece of work. ──
+
+  STAGE CONSTITUTION
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT JSON
+    INTO   work
+    ASK
+      I am starting a piece of research. Set its constitution before anything is built.
+
+      Reply with ONLY this JSON:
+
+      {"question":"the question, as a question",
+       "primitives":[{"term":"…","means":"…","is_not":"…"}],
+       "evidence_would_be":"what would count as evidence here",
+       "falsified_by":"what observation would kill this",
+       "out_of_scope":["…"],"done_when":"…"}
+
+      primitives: for each term I will rely on, say what it means AND what it must not be
+      mistaken for. A forbidden substitution is worth more than a definition.
+      falsified_by: if nothing could kill it, it is not a research question yet. Say so.
+
+      What I have so far:
+      {seed}
+    END ASK
+    VALIDATE HAS(work, "falsified_by")
+    ON FAIL CLARIFY
+  END STAGE
+
+  REM ── LAYERS 1-2. What kind of object is this, and where does it connect? ──
+
+  STAGE INTAKE
+    RESOLUTION MID
+    VERB   CREATE
+    EXPECT JSON
+    FROM   work
+    INTO   work.object
+    ASK
+      Classify what I have brought.
+
+      Reply with ONLY this JSON:
+
+      {"type":"hypothesis|question|observation|equation|artifact|result|literature|implementation|correction",
+       "claim":"…","depends_on":["…"],"unknowns":["…"],
+       "status":"DEF|AX|ASSUMP|DER|CONJ|HYP|EMP|OPEN|FAIL"}
+
+      status: one of the nine tags, and no other word. An untagged claim will be read as
+      derived, which would be a lie.
+      unknowns: what is genuinely not settled. An empty list here is almost always wrong.
+    END ASK
+    VALIDATE HAS(work.object, "status")
+  END STAGE
+
+  STAGE CORRELATE
+    RESOLUTION MID
+    VERB   VERIFY
+    EXPECT TEXT
+    FROM   work.object
+    INTO   work.correlation
+    ASK
+      Where does this connect to work that already exists?
+
+      In 80 to 150 words, separate four things and label each line:
+
+        RETRIEVED  — read from a source that exists. Name the source.
+        INFERRED   — concluded here, from something retrieved.
+        PROPOSED   — offered now, resting on nothing yet.
+        UNRESOLVED — known to be missing.
+
+      Do not let one contaminate another. If you have no retrieved sources, say so under
+      RETRIEVED rather than promoting an inference.
+    END ASK
+    VALIDATE MATCHES(work.correlation, "UNRESOLVED|RETRIEVED")
+    ON FAIL REPAIR
+  END STAGE
+
+  REM ── LAYERS 3-4. Precise enough to be wrong. ──
+
+  STAGE SPECIFY
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT TEXT
+    FROM   work
+    INTO   work.spec
+    ASK
+      Write the specification. Precise enough to be WRONG.
+
+      Give: definitions, assumptions and their justification, variables with their domains,
+      constraints, the mapping being claimed, predictions, failure conditions, validation
+      criteria, and the limits of scope.
+
+      Tag every statement with one of DEF AX ASSUMP DER CONJ HYP EMP OPEN FAIL.
+      Where a quantity is not known, write UNRESOLVED. Do not supply a plausible value.
+    END ASK
+    VALIDATE WORDS(work.spec) > 80
+    ON FAIL REPAIR
+  END STAGE
+
+  STAGE FORMALIZE
+    RESOLUTION MID
+    VERB   CREATE
+    EXPECT TEXT
+    FROM   work.spec
+    INTO   work.formal
+    ASK
+      Convert the specification into formal statements: definitions, axioms, lemmas,
+      propositions, theorems, conjectures, derivations, counterexamples.
+
+      Every line carries its tag. A conjecture may not become a theorem by restatement, and
+      a derivation that does not exist yet is marked OPEN, not DER.
+
+      Name the formalization targets — what a proof assistant would have to be given.
+    END ASK
+  END STAGE
+
+  REM ── LAYER 5. Build the thing. Do not merely explain it. ──
+
+  STAGE IMPLEMENT
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT DATA
+    FROM   work.formal
+    INTO   work.impl
+    ASK
+      Build it. Not a description of it — the thing.
+
+      Produce whichever applies: a formal specification file, a proof-assistant skeleton, a
+      simulator, an implementation, a measurement pipeline, a test suite, a container
+      definition, a benchmark.
+
+      Return the artifact itself. Say explicitly which components are still missing, and
+      name each one.
+    END ASK
+    VALIDATE NOT EMPTY(work.impl)
+    ON FAIL REPAIR
+  END STAGE
+
+  STAGE VERIFY
+    RESOLUTION MID
+    VERB   VERIFY
+    EXPECT TEXT
+    FROM   work.impl
+    INTO   work.verification
+    ASK
+      Independently attack what was just built. You are not confirming it.
+
+      Check: type correctness, dimensional consistency, mathematical consistency, logical
+      consistency, conservation, boundary conditions, limiting cases, symmetries, numerical
+      stability, reproducibility, implementation equivalence, contradictions with established
+      results, counterexamples, hidden assumptions.
+
+      Report each as PASS, FAIL, BLOCKED or PARTIAL. A PASS with no evidence is an assertion,
+      not a verification — give the evidence or write BLOCKED.
+    END ASK
+    VALIDATE MATCHES(work.verification, "PASS|FAIL|BLOCKED|PARTIAL")
+    ON FAIL REPAIR
+  END STAGE
+
+  STAGE SIMULATE
+    RESOLUTION MID
+    VERB   EXECUTE
+    EXPECT DATA
+    OPTIONAL
+    ATTACH INBOX
+    FROM   work.impl
+    ASK
+      Run it and bring back what happened — not what should happen.
+
+      Return the run: parameters, initial conditions, outputs, and how somebody else would
+      reproduce it. If it did not run, say that instead, and say where it stopped.
+    END ASK
+  END STAGE
+
+  REM ── LAYER 8. From a computational claim to a physical one. ──
+
+  STAGE EXPERIMENT
+    RESOLUTION MID
+    VERB   MEASURE
+    EXPECT TEXT
+    FROM   work.spec
+    INTO   work.experiment
+    ASK
+      Translate the claim into something measurable in the world.
+
+      Give: the measurable quantity, the instrument, the protocol, the control, the expected
+      result, and the discriminating observable — the one that separates this claim from the
+      nearest rival.
+
+      Every number carries its units and its uncertainty. A number without them is not a
+      measurement.
+    END ASK
+    VALIDATE NOT EMPTY(work.experiment)
+  END STAGE
+
+  REM ── LAYER 9. Try to kill it. ──
+
+  STAGE FALSIFY
+    RESOLUTION EASY
+    VERB   FALSIFY
+    EXPECT TEXT
+    FROM   work
+    INTO   work.falsification
+    ASK
+      Assume this is wrong. Find the smallest thing that would prove it.
+
+      Give the hypothesis, the prediction, the null model, the control, the discriminating
+      observable, the falsification threshold, and the result if it has been run.
+
+      You are trying to kill it. If you find nothing, say exactly what you tried — a
+      falsification step that reports "no problems found" without saying what it attempted
+      has done nothing.
+    END ASK
+    VALIDATE WORDS(work.falsification) > 50
+    ON FAIL REPAIR
+  END STAGE
+
+  REM ── LAYER 10. What is now true, and what is not. ──
+
+  STAGE SYNTHESIZE
+    RESOLUTION EASY
+    VERB   INTEGRATE
+    EXPECT TEXT
+    FROM   work.verification
+    INTO   work.synthesis
+    ASK
+      Update the position, and only where a lower-level artifact now exists to support it.
+
+      Say separately: what is now PROVEN · what is COMPUTATIONALLY VERIFIED · what is
+      EMPIRICALLY SUPPORTED · what remains HYPOTHETICAL · what FAILED · what CHANGED · what
+      DEPENDS ON WHAT · what should be done next.
+
+      Do not promote anything a tier it has not earned.
+    END ASK
+  END STAGE
+
+  STAGE AUDIT
+    RESOLUTION EASY
+    VERB   VERIFY
+    EXPECT JSON
+    FROM   work
+    INTO   work.completeness
+    ASK
+      Measure progress, not ego.
+
+      Reply with ONLY this JSON:
+
+      {"components":[{"name":"…","required":true,"state":"done|partial|missing","evidence":"…"}],
+       "missing_named":["…"],"statement":"…"}
+
+      statement: it may not say the research is complete. Where every required component
+      exists, the honest sentence is that they exist — which is not the same as correct.
+      evidence: for anything marked done, what exists that shows it.
+    END ASK
+    VALIDATE HAS(work.completeness, "components")
+    ON FAIL REPAIR
+  END STAGE
+
+  STAGE REFINE
+    RESOLUTION MID
+    VERB   INTEGRATE
+    EXPECT TEXT
+    FROM   work.completeness
+    INTO   work.next
+    ASK
+      Write the starting artifact for the next cycle.
+
+      Name the single component whose absence blocks the most, say what producing it would
+      take, and say what would make it unnecessary.
+
+      Then state the one thing that, if it were false, would waste all of the above.
+    END ASK
+  END STAGE
+
+  STAGE SEAL
+    RESOLUTION PRO
+    VERB  INTEGRATE
+    GATE  HUMAN "SEAL genie"
+    EMIT  MANIFEST "MANIFEST.sha256"
+    ENVELOPE "sealing fixes what this cycle produced; it does not assert that it is right"
+  END STAGE
+END CYCLER

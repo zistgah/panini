@@ -17,12 +17,18 @@
  * without a manual, which is the point — the six cyclers are configuration a person edits, not
  * a module a programmer maintains.
  *
- * RESOLUTION, NOT MODES
- * ---------------------
- * EASY, MID and PRO are LEVELS OF RESOLUTION over ONE program. A stage declares the resolution at
- * which it becomes visible. At EASY you see the spine; at PRO you see every stage and every
- * property. Nothing is computed differently — you are looking at the same text through a
- * different lens.
+ * RESOLUTION IS THE INTERACTION, NOT THE CYCLE
+ * --------------------------------------------
+ * EASY, MID and PRO describe how much of the machinery you TOUCH. They do not change which
+ * stages run — EVERY STAGE ALWAYS RUNS.
+ *
+ *   EASY   click through. One control. The prompt is handled for you; you press on.
+ *   MID    you see the prompt and paste the answer back yourself.
+ *   PRO    you see and edit everything: prompt, shape, validation, gate, the .pni itself.
+ *
+ * An earlier version had this wrong — it hid stages at EASY, which meant a simpler view
+ * produced a DIFFERENT and less complete artifact. That is exactly backwards. Simplicity is
+ * about the number of decisions in front of you, never about how much of the work gets done.
  *
  * THE INTERPRETER NEVER CALLS AN AI
  * ---------------------------------
@@ -377,10 +383,29 @@ export class Machine {
     this.artifacts = [];
   }
 
-  /* Which stages a person SEES at this resolution. Not which stages run. */
-  visible(res = this.resolution) {
-    const rank = r => RESOLUTIONS.indexOf(r);
-    return this.cycler.stages.filter(s => rank(s.resolution) <= rank(res));
+  /* EVERY STAGE RUNS AT EVERY RESOLUTION. This returns the whole cycle, always.
+     `stage.resolution` no longer gates visibility; it records the level at which a stage's
+     CONTROLS are exposed, which the host reads — see `controls()`. */
+  visible() { return this.cycler.stages; }
+
+  /* What the host should put in front of a person at this resolution. */
+  controls(res = this.resolution) {
+    const s = this.stage();
+    if (!s) return null;
+    const auto = res === 'EASY';
+    return {
+      showPrompt:   res !== 'EASY',
+      editPrompt:   res === 'PRO',
+      showShape:    res !== 'EASY',
+      editShape:    res === 'PRO',
+      showValidate: res === 'PRO',
+      editSource:   res === 'PRO',
+      /* At EASY the person still crosses every gate. A boundary is never automated away —
+         that is authority, not machinery, and simplifying the interface must not touch it. */
+      gateAlways:   true,
+      oneButton:    auto,
+      label: auto ? 'Next' : 'File this answer'
+    };
   }
   setResolution(r) { if (RESOLUTIONS.includes(r)) this.resolution = r; return this.resolution; }
 

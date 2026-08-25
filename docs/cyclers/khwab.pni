@@ -16,6 +16,51 @@ CYCLER KHWAB
     EVIDENCE  "a poster per shot, cut from the reel itself"
   END CONTRACT
 
+  REM ── Start here. Not with a reel — with what you want somebody to see. ──
+
+  STAGE CONCEPT
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT JSON
+    INTO   book
+    ASK
+      I want to make something to be watched. It might be one image or a long series.
+      Help me work out what it is.
+
+      Reply with ONLY this JSON:
+
+      {"title":"…","kind":"image|diagram|animation|skit|documentary|feature|series",
+       "length":"how long, honestly","viewer":"who is watching and where",
+       "beat":"the one thing that changes between the start and the end",
+       "look":"the visual grammar in one clause","done_when":"…"}
+
+      beat: if nothing changes, it is a picture and not a piece. Say so if that is the case.
+      look: a grammar, not a mood — "handheld, natural light, no cuts inside a line" rather
+      than "cinematic".
+
+      What I have so far:
+      {seed}
+    END ASK
+    VALIDATE HAS(book, "beat")
+    ON FAIL CLARIFY
+  END STAGE
+
+  STAGE TREATMENT
+    RESOLUTION MID
+    VERB   CREATE
+    EXPECT TEXT
+    FROM   book
+    INTO   book.treatment
+    ASK
+      Write the treatment in 80 to 150 words: what a viewer sees from first frame to last,
+      in order. Present tense. No camera directions yet and no adjectives about how good it
+      will be.
+
+      End with the single shot that carries the whole thing. If there is not one, say so.
+    END ASK
+  END STAGE
+
+
   STAGE SHOTS
     RESOLUTION EASY
     VERB   CREATE

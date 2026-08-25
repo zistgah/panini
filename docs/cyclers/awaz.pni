@@ -16,6 +16,49 @@ CYCLER AWAZ
     EVIDENCE  "a waveform computed from the samples, not drawn"
   END CONTRACT
 
+  REM ── Start here. Not with a recording — with what you want somebody to hear. ──
+
+  STAGE CONCEPT
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT JSON
+    INTO   book
+    ASK
+      I want to make something to be heard. Help me work out what it is.
+
+      Reply with ONLY this JSON:
+
+      {"title":"…","kind":"song|podcast|lecture|oral history|audiobook|sound work",
+       "length":"how long, honestly","listener":"who is listening and while doing what",
+       "voice":"whose voice, and in what register","turn":"the moment it changes",
+       "done_when":"…"}
+
+      listener: "while driving" and "with headphones, alone" are different pieces. Say which.
+      turn: a recording with no turn is a file, not a work.
+
+      What I have so far:
+      {seed}
+    END ASK
+    VALIDATE HAS(book, "turn")
+    ON FAIL CLARIFY
+  END STAGE
+
+  STAGE RUNNING
+    RESOLUTION MID
+    VERB   CREATE
+    EXPECT TEXT
+    FROM   book
+    INTO   book.running
+    ASK
+      Write the running order in 80 to 150 words: what is heard, in sequence, with rough
+      durations. Mark where the turn falls.
+
+      If this is speech, say who speaks and whether anyone answers. If it is music, say what
+      the arrangement is. If it is neither, describe the sound.
+    END ASK
+  END STAGE
+
+
   STAGE PASSAGES
     RESOLUTION EASY
     VERB   CREATE

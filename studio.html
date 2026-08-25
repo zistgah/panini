@@ -27,6 +27,9 @@ header .sp{flex:1}
 #dial button{border:0;border-radius:0;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
 padding:.45rem .75rem;color:var(--dim)}
 #dial button[aria-pressed=true]{background:var(--acc);color:#141019}
+#rec{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase}
+#rec[aria-pressed=true]{border-color:var(--warn);color:var(--warn)}
+#rec[aria-pressed=true]::before{content:"\25CF ";color:var(--warn)}
 main{display:grid;grid-template-columns:15rem 1fr;min-height:0}
 @media(max-width:56rem){main{grid-template-columns:1fr}#rail{display:none}}
 #rail{background:var(--panel);border-right:1px solid var(--rule);overflow:auto;padding:.6rem}
@@ -40,6 +43,26 @@ border:1px solid var(--rule);border-radius:2px;background:rgba(255,255,255,.02)}
 #work{overflow:auto;padding:1rem 1.2rem 2rem;min-width:0}
 .blank{max-width:44ch;margin:4rem auto;color:var(--dim);text-align:center}
 .blank h2{font-family:var(--disp);font-size:1.7rem;font-weight:400;color:var(--paper);margin:0 0 .5rem}
+.wheelwrap{display:grid;place-items:center;padding:.4rem 0 2rem}
+.wheel{position:relative;width:min(25rem,78vw);aspect-ratio:1}
+.wheel svg{width:100%;height:100%;display:block;filter:drop-shadow(0 12px 30px rgba(0,0,0,.6))}
+.seg-label{font-family:var(--mono);letter-spacing:.04em;fill:rgba(236,230,242,.6);
+text-transform:uppercase;pointer-events:none}
+.seg-label.on{fill:#141019;font-weight:700}
+.seg-label.done{fill:rgba(126,200,169,.85)}
+.hub{position:absolute;left:31%;top:31%;width:38%;height:38%;border-radius:50%;border:0;
+background:radial-gradient(circle at 38% 32%,#f0c968,#8a6321 72%);color:#1a1109;
+display:grid;place-items:center;text-align:center;padding:.4rem;cursor:pointer;
+box-shadow:0 8px 22px rgba(0,0,0,.65),inset 0 -4px 10px rgba(0,0,0,.3);
+font:700 .8rem/1.25 var(--mono);letter-spacing:.05em;text-transform:uppercase}
+.hub:hover{filter:brightness(1.08)}
+.hub:disabled{filter:grayscale(.55) brightness(.85);cursor:default}
+.hub small{display:block;font:400 .58rem/1.3 var(--mono);text-transform:none;letter-spacing:0;opacity:.82}
+.pointer{position:absolute;left:50%;top:-.55rem;transform:translateX(-50%);z-index:2;
+border-left:.55rem solid transparent;border-right:.55rem solid transparent;
+border-top:1rem solid #f0c968;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+.wheelcap{text-align:center;margin-top:.9rem;color:var(--dim);font-size:.76rem;max-width:34rem;line-height:1.6}
+.wheelcap b{color:var(--paper);font-weight:400}
 .spine{display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:1rem}
 .pip{border:1px solid var(--rule);border-radius:2px;padding:.35rem .55rem;font-size:.62rem;
 letter-spacing:.06em;color:var(--dim)}
@@ -83,6 +106,7 @@ font-size:.65rem;color:var(--dim);display:flex;gap:1.2rem;flex-wrap:wrap}
   <span class=sp></span>
   <span class=dev id=res-label>resolution</span>
   <div id=dial role=group aria-label="Level of resolution"></div>
+  <button id=rec aria-pressed=false title="Capture how you actually work, and write it back as a cycler">Record</button>
   <button id=settings>Settings</button>
 </header>
 
@@ -110,12 +134,14 @@ font-size:.65rem;color:var(--dim);display:flex;gap:1.2rem;flex-wrap:wrap}
 
 <script type=module>
 import P from './panini.js';
+import { Recorder } from './recorder.js';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 const CYCLERS = ['matba','khwab','awaz','tilasm','pench','yadein'];
-let src = '', M = null, res = localStorage.getItem('panini.res') || 'MID';
+let src = '', M = null, R = null, res = localStorage.getItem('panini.res') || 'EASY';
+const DIAL = { EASY:'click through \u2014 the prompt is handled for you', MID:'see the prompt, paste the answer back', PRO:'see and edit everything, including the .pni' };
 let cfg = { providers: [], endpoint: '', key: '', reply: '', body: '' };
 try { Object.assign(cfg, JSON.parse(localStorage.getItem('panini.cfg') || '{}')); } catch (e) {}
 
@@ -138,7 +164,9 @@ function dial() {
   for (const r of P.RESOLUTIONS) {
     const b = document.createElement('button'); b.type = 'button'; b.textContent = r;
     b.setAttribute('aria-pressed', String(r === res));
-    b.title = { EASY:'the spine only', MID:'the working stages', PRO:'every stage and every property' }[r];
+    b.title = { EASY:'click through — the prompt is handled for you',
+                MID:'see the prompt, paste the answer back',
+                PRO:'see and edit everything, including the .pni' }[r];
     b.onclick = () => { res = r; localStorage.setItem('panini.res', r); if (M) M.setResolution(r); dial(); draw(); };
     d.append(b);
   }
@@ -190,21 +218,16 @@ function draw(problems = []) {
   let h = '<h3>' + esc(c.title || c.id) + (c.script ? ' <span style="color:var(--acc)">' + esc(c.script) + '</span>' : '') + '</h3>';
   h += '<p class=meta>' + esc(c.output) + ' · ' + esc(c.unit) + ' · ' + esc(c.purpose) + '</p>';
 
-  h += '<div class=spine>';
-  for (const s of vis) {
-    const cls = s === M.stage() ? 'now' : (s.answered || s.gateCrossed ? 'done' : (s.gate ? 'gate' : ''));
-    h += '<span class="pip ' + cls + '">' + esc(s.id) + (s.gate ? ' ⟡' : '') + '</span>';
-  }
-  h += '</div>';
-  h += '<p class=meta>' + vis.length + ' of ' + c.stages.length +
-       ' stages visible at ' + res + '. Resolution changes what you see, never what is computed.</p>';
+  h += '<div class=wheelwrap><div class=wheel><div class=pointer></div>' +
+       wheelSvg(c.stages, c.stages.indexOf(M.stage())) +
+       '<button class=hub id=hub></button></div><p class=wheelcap id=cap></p></div>';
 
   if (problems.length) {
     h += '<div class=boundary><b>This cycler does not check clean.</b><br>' +
          problems.map(esc).join('<br>') + '</div>';
   }
 
-  if (!need) { h += '<p class=note>Nothing more to do.</p>'; w.innerHTML = h + settingsBlock() + sourceBlock(); wire(); return; }
+  if (!need) { h += '<p class=note>Nothing more to do.</p>'; w.innerHTML = h + settingsBlock() + (res === 'PRO' ? sourceBlock() : ''); wire(); return; }
 
   if (need.need === 'done') {
     h += '<div class=gatebox><h4>The cycle is complete.</h4><p class=note>' +
@@ -216,7 +239,7 @@ function draw(problems = []) {
       '<div class=bar><input type=text id=gateword placeholder="type exactly: ' + esc(need.word || '') + '">' +
       '<button class=go id=gatego>Cross</button></div>' +
       '<p class=note id=gatenote></p></div>';
-  } else {
+  } else if (need.need === 'answer' && res !== 'EASY') {
     const pr = need.prompt;
     h += '<h4 style="font-family:var(--disp);font-weight:400;margin:.6rem 0 .2rem">' + esc(need.stage) + '</h4>';
     h += '<p class=meta>' + esc(M.stage().verb || '') + ' · expects ' + esc(pr.expect) +
@@ -237,8 +260,117 @@ function draw(problems = []) {
            ? '<button id=inbox>Choose a file</button><input type=file id=finb hidden>' : '') +
          '</div><p class=note id=note></p>';
   }
-  w.innerHTML = h + settingsBlock() + sourceBlock();
+  w.innerHTML = h + settingsBlock() + (res === 'PRO' ? sourceBlock() : '') + (R ? recorderBlock() : '');
+  paintHub();
   wire(need);
+}
+
+/* ── THE WHEEL. Every stage is on it, always. The wheel IS the cycle. ── */
+function wheelSvg(stages, curIdx) {
+  const n = stages.length, RO = 46, RI = 19, cx = 50, cy = 50, seg = 360 / n;
+  const pol = (r,a) => { const t=(a-90)*Math.PI/180; return [cx+r*Math.cos(t), cy+r*Math.sin(t)]; };
+  const out = [];
+  stages.forEach((s,i) => {
+    const a0=i*seg, a1=(i+1)*seg, big = seg>180?1:0;
+    const [x0,y0]=pol(RO,a0), [x1,y1]=pol(RO,a1), [ix1,iy1]=pol(RI,a1), [ix0,iy0]=pol(RI,a0);
+    const done = s.answered || s.gateCrossed, on = i===curIdx;
+    const fill = on ? 'var(--acc)' : done ? 'rgba(126,200,169,.18)'
+                    : s.gate ? 'rgba(196,69,123,.10)' : 'rgba(236,230,242,.045)';
+    out.push('<path d="M'+x0.toFixed(2)+' '+y0.toFixed(2)+' A'+RO+' '+RO+' 0 '+big+' 1 '+
+      x1.toFixed(2)+' '+y1.toFixed(2)+' L'+ix1.toFixed(2)+' '+iy1.toFixed(2)+' A'+RI+' '+RI+
+      ' 0 '+big+' 0 '+ix0.toFixed(2)+' '+iy0.toFixed(2)+' Z" fill="'+fill+
+      '" stroke="rgba(236,230,242,.16)" stroke-width=".4"/>');
+    const mid = a0+seg/2, [lx,ly] = pol((RO+RI)/2, mid);
+    const rot = mid>180 ? mid+90 : mid-90;
+    out.push('<text class="seg-label'+(on?' on':done?' done':'')+'" x="'+lx.toFixed(2)+'" y="'+ly.toFixed(2)+
+      '" text-anchor="middle" dominant-baseline="middle" font-size="3.3" transform="rotate('+
+      rot.toFixed(1)+' '+lx.toFixed(2)+' '+ly.toFixed(2)+')">'+
+      esc((s.gate?'\u29BF ':'')+s.id).slice(0,20)+'</text>');
+  });
+  return '<svg viewBox="0 0 100 100" role="img" aria-label="the cycle, '+n+' stages">'+
+    '<circle cx=50 cy=50 r=47.5 fill="none" stroke="var(--acc)" stroke-opacity=".35" stroke-width="1.1"/>'+
+    out.join('')+'</svg>';
+}
+
+let easyPhase = 'send';
+
+function paintHub() {
+  const hub = document.getElementById('hub'), cap = document.getElementById('cap');
+  if (!hub || !M) return;
+  const n = M.cycler.stages.length;
+  if (!need || need.need === 'done') {
+    hub.innerHTML = 'Done'; hub.disabled = true;
+    cap.innerHTML = '<b>The cycle is complete.</b> ' + esc(M.cycler.contract.evidence.join(' \u00b7 '));
+    return;
+  }
+  if (need.need === 'gate') {
+    hub.innerHTML = 'Your<br>call<small>a boundary</small>'; hub.disabled = true;
+    cap.innerHTML = '<b>' + esc(need.stage) + '</b> \u2014 you cross this one, at every level. ' +
+      'Simplifying the interface never automates a boundary away.';
+    return;
+  }
+  const s = M.stage(), i = M.cycler.stages.indexOf(s) + 1;
+  if (res === 'EASY') {
+    hub.disabled = false;
+    hub.onclick = clickThrough;
+    if (easyPhase === 'send') {
+      hub.innerHTML = 'Go<small>' + esc(s.id) + '</small>';
+      cap.innerHTML = '<b>' + i + ' of ' + n + '</b> \u2014 press the hub. The prompt goes to your ' +
+        'clipboard and your AI opens. Come back and press it again.';
+    } else {
+      hub.innerHTML = 'Paste<small>and press</small>';
+      cap.innerHTML = 'Copy the answer, come back, and press the hub. Nothing was sent from here.';
+    }
+  } else {
+    hub.innerHTML = i + ' / ' + n + '<small>' + esc(s.id) + '</small>';
+    hub.disabled = true;
+    cap.innerHTML = 'Every stage runs at every level. <b>' + esc(res) + '</b> changes only how much ' +
+      'you touch: ' + esc(DIAL[res]) + '.';
+  }
+}
+
+/* EASY is ONE control: copy and open, then read the clipboard back. */
+async function clickThrough() {
+  const cap = document.getElementById('cap');
+  if (easyPhase === 'send') {
+    const pr = need.prompt;
+    try { await navigator.clipboard.writeText(pr.text); }
+    catch (e) { cap.innerHTML = 'This browser blocked the clipboard. Switch to <b>MID</b> to see ' +
+      'the prompt and copy it yourself.'; return; }
+    if (R) R.asked(pr.text, pr.expect, M.stage().into);
+    const p = cfg.providers[0];
+    if (p) window.open(p.url.includes('{prompt}')
+      ? p.url.replace('{prompt}', encodeURIComponent(pr.text)) : p.url, '_blank', 'noopener');
+    easyPhase = 'receive'; paintHub();
+    return;
+  }
+  let text = '';
+  try { text = await navigator.clipboard.readText(); }
+  catch (e) {
+    cap.innerHTML = 'This browser will not hand over the clipboard. Switch to <b>MID</b> and paste ' +
+      'into the box instead \u2014 it never dead-ends.'; return;
+  }
+  if (!text.trim()) { cap.innerHTML = 'Nothing on the clipboard yet. Copy the answer first.'; return; }
+  const r = M.answer(text);
+  if (!r.ok) {
+    if (R) R.rejected(r.why);
+    cap.innerHTML = '<b>Refused:</b> ' + esc(r.why) + ' \u2014 press again after fixing it, or ' +
+      'switch to <b>MID</b> to see the prompt.'; return;
+  }
+  if (R) R.accepted(need.prompt.expect);
+  easyPhase = 'send';
+  draw();
+}
+
+function recorderBlock() {
+  return '<details open><summary>Recording \u2014 your way of working</summary>' +
+    '<p class=note>Your prompts and their order are kept. <b>Your answers are not</b> \u2014 those ' +
+    'are the work, not the method, and a recording that swept them up would be unshareable.</p>' +
+    '<ul class=note style="padding-left:1.1rem">' +
+    R.observations().map(x=>'<li>'+esc(x)+'</li>').join('') + '</ul>' +
+    '<div class=bar><button class=go id=writepni>Write it as a cycler</button>' +
+    '<button id=addrefuse>Add a refusal</button></div>' +
+    '<pre class=prompt id=recout hidden></pre></details>';
 }
 
 function safeStep() { try { return M.step(); } catch (e) { return { need:'error', why:e.message }; } }
@@ -268,8 +400,20 @@ function sourceBlock() {
     '<button id=download>Save as .pni</button></div></details>';
 }
 
-function wire(need) {
+function wire() {
   const q = id => document.getElementById(id);
+  if (q('writepni')) q('writepni').onclick = () => {
+    const pni = R.toPni();
+    const o = q('recout'); o.hidden = false; o.textContent = pni;
+    const b = new Blob([pni], {type:'text/plain'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+    a.download = (R.meta.id||'recorded').toLowerCase() + '.pni';
+    document.body.append(a); a.click(); a.remove();
+  };
+  if (q('addrefuse')) q('addrefuse').onclick = () => {
+    const t = window.prompt('What will this cycle NOT do? The refusals are the specification.');
+    if (t) { R.refuses(t); draw(); }
+  };
   const note = (t,k) => { const n = q('note'); if (n) { n.textContent = t; n.className = 'note ' + (k||''); } };
 
   if (q('copy')) q('copy').onclick = async () => {
@@ -342,6 +486,16 @@ $('#fin').onchange = async e => { const f = e.target.files[0]; if (f) boot(await
 $('#editsrc').onclick = () => { const d = document.querySelectorAll('details'); if (d.length) d[d.length-1].open = true; };
 $('#settings').onclick = () => { const s = document.getElementById('setbox'); if (s) s.open = !s.open; };
 
+document.getElementById('rec').onclick = () => {
+  const b = document.getElementById('rec');
+  if (R) { R = null; b.setAttribute('aria-pressed','false'); b.textContent = 'Record'; }
+  else {
+    R = new Recorder({ id: M ? M.cycler.id : 'MYCYCLE', title: 'How I actually do this',
+                       output: M ? M.cycler.output : 'PRINT', unit: M ? M.cycler.unit : 'item' });
+    b.setAttribute('aria-pressed','true'); b.textContent = 'Recording';
+  }
+  draw();
+};
 dial(); list();
 loadCycler('matba');
 </script>

@@ -19,6 +19,55 @@ CYCLER YADEIN
     EVIDENCE  "an explicit mark per entry"
   END CONTRACT
 
+  REM ── Start here. Not with material — with what this record is FOR, and for whom. ──
+
+  STAGE CONCEPT
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT JSON
+    INTO   book
+    ASK
+      I want to keep a record. Help me work out what it is.
+
+      Reply with ONLY this JSON:
+
+      {"title":"…","kind":"diary|oral history|family archive|notebook|longitudinal record",
+       "span":"the period it covers, as vaguely as the truth requires",
+       "for_whom":"who reads this, and when",
+       "others_in_it":"who else appears, and whether they know",
+       "default":"private","done_when":"…"}
+
+      span: if you only know "the nineties", write that. Do not sharpen it.
+      others_in_it: this is the question most records never ask. Answer it.
+      default: leave this as private. Publication is per entry and it is decided later.
+
+      What I have so far:
+      {seed}
+    END ASK
+    VALIDATE HAS(book, "others_in_it")
+    ON FAIL CLARIFY
+  END STAGE
+
+  STAGE CONSENT
+    RESOLUTION EASY
+    VERB   VERIFY
+    EXPECT TEXT
+    FROM   book
+    INTO   book.consent
+    ASK
+      Before any entry is written: in 60 to 110 words, who else is in this record and what
+      have they agreed to?
+
+      Name anyone who appears and has not been asked. Say what would happen if this became
+      public tomorrow. If someone is dead, say who speaks for them.
+
+      Do not resolve this on my behalf and do not reassure me. Name it.
+    END ASK
+    VALIDATE NOT EMPTY(book.consent)
+    ON FAIL REPAIR
+  END STAGE
+
+
   STAGE ENTRIES
     RESOLUTION EASY
     VERB   CREATE

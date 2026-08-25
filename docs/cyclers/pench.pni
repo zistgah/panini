@@ -19,6 +19,58 @@ CYCLER PENCH
     EVIDENCE  "stated limits, or a stated absence of them"
   END CONTRACT
 
+  REM ── Start here. Not with a manoeuvre — with what must be true in the world. ──
+
+  STAGE CONCEPT
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT JSON
+    INTO   book
+    ASK
+      I want to put intent into the physical world. Help me work out what it is.
+
+      Reply with ONLY this JSON:
+
+      {"title":"…","platform":"what this runs on, named exactly",
+       "task":"what it must accomplish, as a measurable outcome",
+       "where":"the physical setting, including who else is in it",
+       "energy":"what stores or moves energy here",
+       "worst_case":"what happens when it goes wrong at the worst moment",
+       "done_when":"…"}
+
+      task: measurable. "Picks reliably" is not a task; "places a 200 g part within 2 mm,
+      95 times in 100" is.
+      worst_case: do NOT soften this and do NOT invent a mitigation. Name the failure.
+      If you do not know the energy stored here, write "not established".
+
+      What I have so far:
+      {seed}
+    END ASK
+    VALIDATE HAS(book, "worst_case")
+    ON FAIL REPAIR
+  END STAGE
+
+  STAGE HAZARD
+    RESOLUTION EASY
+    VERB   VERIFY
+    EXPECT TEXT
+    FROM   book
+    INTO   book.hazard
+    ASK
+      Before any manoeuvre is designed: in 60 to 110 words, what can this hurt?
+
+      Name what is within reach when it moves, what it stores that can be released suddenly,
+      what happens on loss of power or network mid-motion, and who is expected to be nearby.
+
+      Where a quantity is not known, write "not established" rather than a plausible number.
+      An invented limit is worse than an absent one, and this is the stage where that matters
+      most.
+    END ASK
+    VALIDATE NOT EMPTY(book.hazard)
+    ON FAIL REPAIR
+  END STAGE
+
+
   STAGE MANOEUVRES
     RESOLUTION EASY
     VERB   CREATE

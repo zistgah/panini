@@ -1,6 +1,6 @@
 # PANINI
 
-**a language for prompt writing cyclers.**
+**پाणिनि · پاणिنی — a language for prompt cycles.**
 
 A cycler is a **sequence of prompts and the outputs they produce**. PANINI lets you write that
 sequence down, so a cycler stops being code somebody maintains and becomes a text somebody edits.
@@ -24,7 +24,7 @@ END STAGE
 
 That is the whole thing. No build step, no compiler, no framework.
 
-## BASIC in shape
+## QBASIC in shape
 
 Line-oriented, case-insensitive, `REM` and `'` comments, `LET` `PRINT` `IF/THEN/ELSE`
 `FOR/NEXT` `WHILE/WEND` `DIM` `SUB`. Anyone who wrote BASIC in 1991 can read a cycler without a

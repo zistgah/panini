@@ -112,19 +112,39 @@ t('an unset variable interpolates to nothing, never to a guess', () => {
   assert.ok(!/undefined|null/.test(m.prompt().text)); });
 
 /* ── RESOLUTION is a lens, not a mode ── */
-t('EASY, MID and PRO are levels of resolution over ONE program', () => {
+t('EVERY STAGE RUNS AT EVERY LEVEL — resolution is the interaction, not the cycle', () => {
   const m = P.run(mini);
-  assert.deepEqual(m.visible('EASY').map(s=>s.id), ['ONE']);
-  assert.deepEqual(m.visible('PRO').map(s=>s.id), ['ONE','TWO']);
-  assert.equal(m.cycler.stages.length, 2, 'the program itself never changes'); });
+  for (const r of P.RESOLUTIONS) {
+    m.setResolution(r);
+    assert.deepEqual(m.visible().map(s=>s.id), ['ONE','TWO'],
+      'stages were hidden at ' + r + ' — a simpler view must never produce a lesser artifact'); } });
+t('resolution changes only how much of the machinery is exposed', () => {
+  const m = P.run(mini);
+  m.setResolution('EASY'); const e = m.controls();
+  m.setResolution('PRO');  const p = m.controls();
+  assert.equal(e.oneButton, true);  assert.equal(e.showPrompt, false);
+  assert.equal(p.oneButton, false); assert.equal(p.editSource, true); });
+t('a GATE is crossed by a human at EVERY level, including EASY', () => {
+  const m = P.run(mini);
+  for (const r of P.RESOLUTIONS) {
+    m.setResolution(r);
+    assert.equal(m.controls().gateAlways, true,
+      'a boundary was automated away at ' + r + ' — that is authority, not machinery'); } });
 t('changing resolution never changes what is computed', () => {
   const a = P.run(mini,{resolution:'EASY'}), b = P.run(mini,{resolution:'PRO'});
   a.set('topic','x'); b.set('topic','x');
   assert.equal(a.prompt().text, b.prompt().text); });
-t('every cycler is legible at EASY', () => {
+t('EVERY cycler opens by helping you work out what you are making', () => {
   for (const f of readdirSync(CY)) {
-    const m = P.run(readFileSync(path.join(CY,f),'utf8'));
-    assert.ok(m.visible('EASY').length >= 2, f + ' shows fewer than 2 stages at EASY'); } });
+    const c = P.parse(readFileSync(path.join(CY,f),'utf8')).cyclers[0];
+    const first = c.stages[0].id;
+    assert.ok(/^(CONCEPT|CONSTITUTION)$/.test(first),
+      f + ' opens with ' + first + ' — it assumes you already have material, which is only half the job');
+    assert.equal(c.stages[0].resolution, 'EASY', f + ': the concept stage is not on the easy path'); } });
+t('and the concept stage is not boilerplate — each asks its own questions', () => {
+  const asks = readdirSync(CY).map(f =>
+    P.parse(readFileSync(path.join(CY,f),'utf8')).cyclers[0].stages[0].ask);
+  assert.equal(new Set(asks).size, asks.length, 'two cyclers share a concept prompt'); });
 
 /* ── the interpreter has no provider and cannot acquire one ── */
 t('ASK YIELDS — the machine never calls anything', () => {
@@ -204,7 +224,8 @@ t('all six parse, check clean, and are classified by OUTPUT', () => {
     assert.deepEqual(P.check(prog), [], f + ': ' + P.check(prog).join('; '));
     assert.ok(c.output, f + ' declares no OUTPUT');
     outs.add(c.output); }
-  assert.equal(outs.size, 6, 'two cyclers share an output kind: ' + [...outs]); });
+  const n = readdirSync(CY).length;
+  assert.equal(outs.size, n, 'two cyclers share an output kind: ' + [...outs].join(', ')); });
 t('no two cyclers share a stage sequence — the workflow is NOT shared', () => {
   const sigs = readdirSync(CY).map(f => {
     const c = P.parse(readFileSync(path.join(CY,f),'utf8')).cyclers[0];
@@ -265,9 +286,27 @@ t('a chosen file records that the operator chose it, and claims nothing more', (
   says(H, 'does not claim to know what made it'); });
 t('a local endpoint that is not running says so and names the fallback', () => {
   says(readFileSync(path.join(root,'studio.html'),'utf8'), 'Copy-and-paste still works'); });
-t('the resolution dial is labelled as a lens, not a mode', () => {
-  says(readFileSync(path.join(root,'studio.html'),'utf8'),
-       'Resolution changes what you see, never what is computed'); });
+t('the studio says EVERY stage runs at every level', () => {
+  const H = readFileSync(path.join(root,'studio.html'),'utf8');
+  says(H, 'Every stage runs at every level');
+  says(H, 'click through');
+  assert.ok(!/never changes what is computed/.test(H) || /how much you touch/.test(H),
+    'the dial is still described as a visibility filter'); });
+t('the wheel carries every stage, with the gates marked', () => {
+  const H = readFileSync(path.join(root,'studio.html'),'utf8');
+  says(H, 'function wheelSvg');
+  says(H, 'The wheel IS the cycle');
+  assert.ok(/s\.gate\s*\?/.test(H), 'gates are not distinguished on the wheel'); });
+t('the hub is the only control at EASY, and it never crosses a gate for you', () => {
+  const H = readFileSync(path.join(root,'studio.html'),'utf8');
+  says(H, 'you cross this one, at every level');
+  says(H, 'never automates a boundary away'); });
+t('the recorder captures the METHOD and refuses the content', () => {
+  const R = readFileSync(path.join(root,'recorder.js'),'utf8');
+  says(R, 'It does NOT record the answers themselves');
+  says(R, 'a method you can hand to somebody else');
+  const H = readFileSync(path.join(root,'studio.html'),'utf8');
+  says(H, 'Your answers are not'); });
 
 /* ── the VS Code extension is a host too ── */
 t('the extension names no service; providers come from settings', () => {

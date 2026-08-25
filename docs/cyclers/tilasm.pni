@@ -18,6 +18,56 @@ CYCLER TILASM
     EVIDENCE  "a stated floor-space requirement and locomotion mode"
   END CONTRACT
 
+  REM ── Start here. Not with a space — with what a person is going to DO in it. ──
+
+  STAGE CONCEPT
+    RESOLUTION EASY
+    VERB   CREATE
+    EXPECT JSON
+    INTO   book
+    ASK
+      I want to build somewhere a person can be. Help me work out what it is.
+
+      Reply with ONLY this JSON:
+
+      {"title":"…","kind":"exhibition|training|narrative|laboratory|interactive place",
+       "hardware":"headset, handheld, projected, or a room",
+       "visitor":"who arrives, knowing what","doing":"what they DO, as a verb",
+       "leaves_with":"what they take away","room":"the floor space this needs",
+       "done_when":"…"}
+
+      doing: a verb. "Experiences" and "explores" are not verbs for this purpose — walk,
+      assemble, choose, measure, refuse, wait.
+      room: a real number in metres, or "seated" — the piece is unbuildable without it.
+
+      What I have so far:
+      {seed}
+    END ASK
+    VALIDATE HAS(book, "doing")
+    ON FAIL CLARIFY
+  END STAGE
+
+  STAGE REACH
+    RESOLUTION MID
+    VERB   VERIFY
+    EXPECT TEXT
+    FROM   book
+    INTO   book.reach
+    ASK
+      Before any station is designed: in 60 to 110 words, who is shut out of this piece as
+      conceived, and what would let them in?
+
+      Consider a visitor who cannot stand, who has one hand free, who cannot hear, who gets
+      motion sick, and who has two square metres and no more. For each, either say how they
+      take part or say plainly that they cannot and why.
+
+      Do not offer a mitigation you have invented. If there is not one, that is the answer.
+    END ASK
+    VALIDATE NOT EMPTY(book.reach)
+    ON FAIL REPAIR
+  END STAGE
+
+
   STAGE STATIONS
     RESOLUTION EASY
     VERB   CREATE
